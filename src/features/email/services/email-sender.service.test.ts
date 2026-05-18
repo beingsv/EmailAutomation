@@ -24,6 +24,7 @@ vi.mock('nodemailer', () => ({
 
 // Mock prisma
 const mockFindUnique = vi.fn();
+const mockResumeFindUnique = vi.fn();
 const mockUpsert = vi.fn();
 
 vi.mock('@/shared/lib/db', () => ({
@@ -31,6 +32,9 @@ vi.mock('@/shared/lib/db', () => ({
     smtpConfig: {
       findUnique: (...args: unknown[]) => mockFindUnique(...args),
       upsert: (...args: unknown[]) => mockUpsert(...args),
+    },
+    resume: {
+      findUnique: (...args: unknown[]) => mockResumeFindUnique(...args),
     },
   },
 }));
@@ -167,6 +171,11 @@ describe('Email Sender Service', () => {
         encryptedUsername: 'encrypted_test@gmail.com',
         encryptedPassword: 'encrypted_app-password',
       });
+      // Mock resume lookup for attachment
+      mockResumeFindUnique.mockResolvedValue({
+        filePath: '/uploads/user-1/resume.pdf',
+        filename: 'resume.pdf',
+      });
       mockSendMail.mockResolvedValue({ messageId: 'msg-123' });
 
       const result = await sendEmail('user-1', {
@@ -209,6 +218,7 @@ describe('Email Sender Service', () => {
         encryptedUsername: 'encrypted_test@gmail.com',
         encryptedPassword: 'encrypted_app-password',
       });
+      mockResumeFindUnique.mockResolvedValue(null);
       mockSendMail.mockRejectedValue(new Error('Connection timeout'));
 
       const result = await sendEmail('user-1', {

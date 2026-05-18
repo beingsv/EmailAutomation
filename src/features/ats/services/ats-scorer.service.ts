@@ -121,6 +121,80 @@ export function parseLLMResponse(response: string): {
 }
 
 /**
+ * Builds the AI prompt that combines keyword extraction + scoring in one call.
+ * This replaces hardcoded regex patterns with AI understanding of technical terms.
+ */
+function buildScoringPromptWithKeywords(resumeText: string, jobDescription: string): string {
+  return `You are an expert ATS (Applicant Tracking System) analyzer. Analyze how well the following resume matches the job description.
+
+Provide your analysis in the following EXACT format:
+
+MATCHED_KEYWORDS: [comma-separated list of technical skills/tools/frameworks/languages that appear in BOTH the resume AND the job description]
+MISSING_KEYWORDS: [comma-separated list of technical skills/tools/frameworks/languages that are required in the job description but NOT found in the resume]
+SCORE: [number 0-100]
+SKILLS_GAPS:
+- [skill or qualification gap 1]
+- [skill or qualification gap 2]
+...
+SUGGESTIONS:
+- [improvement suggestion 1]
+- [improvement suggestion 2]
+- [improvement suggestion 3]
+...
+
+Rules:
+- For MATCHED_KEYWORDS and MISSING_KEYWORDS: only include specific technical terms like programming languages, frameworks, libraries, tools, platforms, databases, cloud services, methodologies, and protocols. Do NOT include generic words like "development", "experience", "team", "design", etc.
+- SCORE must be a single integer between 0 and 100 representing overall fit
+- List up to 10 skills gaps (specific skills, qualifications, or experiences missing from the resume)
+- Provide exactly 3 to 5 actionable improvement suggestions
+- Be specific and actionable in your suggestions
+- Do NOT include "years of experience" as a skills gap
+- Do NOT mention experience duration mismatch in skills gaps or suggestions
+
+RESUME:
+${resumeText}
+
+JOB DESCRIPTION:
+${jobDescription}`;
+}
+
+/**
+ * Parses the LLM response that includes keyword extraction + scoring.
+ */
+function parseLLMResponseWithKeywords(response: string): {
+  score: number;
+  skillsGaps: string[];
+  suggestions: string[];
+  matchedKeywords: string[];
+  missingKeywords: string[];
+} {
+  // Parse the base scoring response
+  const base = parseLLMResponse(response);
+
+  // Extract matched keywords
+  const matchedMatch = response.match(/MATCHED_KEYWORDS\s*:\s*\[?(.*?)\]?(?=\n|MISSING)/i);
+  const matchedKeywords: string[] = [];
+  if (matchedMatch) {
+    const keywords = matchedMatch[1].split(',').map(k => k.trim()).filter(k => k.length > 0);
+    matchedKeywords.push(...keywords);
+  }
+
+  // Extract missing keywords
+  const missingMatch = response.match(/MISSING_KEYWORDS\s*:\s*\[?(.*?)\]?(?=\n|SCORE)/i);
+  const missingKeywords: string[] = [];
+  if (missingMatch) {
+    const keywords = missingMatch[1].split(',').map(k => k.trim()).filter(k => k.length > 0);
+    missingKeywords.push(...keywords);
+  }
+
+  return {
+    ...base,
+    matchedKeywords,
+    missingKeywords,
+  };
+}
+
+/**
  * Calculates the combined ATS score by orchestrating keyword analysis and LLM scoring.
  *
  * - Req 5.2: Sends JD and resume to AI service for LLM-based semantic scoring
@@ -160,23 +234,34 @@ export async function calculateScore(
   // Step 1: Keyword/TF-IDF analysis (deterministic, 40% weight)
   const keywordAnalysis = analyzeKeywords(sanitizedResume, sanitizedJD);
 
-  // Step 2: LLM semantic scoring (60% weight) with graceful degradation
+  // Step 2: AI-based keyword extraction for matched/missing display
+  let aiMatchedKeywords = keywordAnalysis.matchedKeywords;
+  let aiMissingKeywords = keywordAnalysis.missingKeywords;
+
+  // Step 3: LLM semantic scoring (60% weight) with graceful degradation
   let llmScore: number | null = null;
   let skillsGaps: string[] = [];
   let suggestions: string[] = [];
   let aiUnavailable = false;
 
   try {
-    const prompt = buildScoringPrompt(sanitizedResume, sanitizedJD);
+    // Combined prompt: extract keywords + score in one call to save time
+    const prompt = buildScoringPromptWithKeywords(sanitizedResume, sanitizedJD);
     const aiResponse = await generateCompletion(prompt, {
       temperature: 0.3,
-      systemPrompt: 'You are an expert ATS analyzer. Respond only in the exact format requested.',
+      systemPrompt: 'You are an expert ATS analyzer. Respond only in the exact format requested. Extract only technical skills, tools, frameworks, languages, and methodologies as keywords.',
     });
 
-    const parsed = parseLLMResponse(aiResponse.content);
+    const parsed = parseLLMResponseWithKeywords(aiResponse.content);
     llmScore = parsed.score;
     skillsGaps = parsed.skillsGaps;
     suggestions = parsed.suggestions;
+
+    // Use AI-extracted keywords if available (more accurate than regex)
+    if (parsed.matchedKeywords.length > 0 || parsed.missingKeywords.length > 0) {
+      aiMatchedKeywords = parsed.matchedKeywords.slice(0, 20);
+      aiMissingKeywords = parsed.missingKeywords.slice(0, 20);
+    }
   } catch (error) {
     // Req 5.6: Graceful degradation - AI unavailable
     console.error('[ATS Scorer] AI scoring failed, falling back to keyword-only:', error);
@@ -207,8 +292,8 @@ export async function calculateScore(
     overallScore,
     keywordScore: keywordAnalysis.keywordScore,
     llmScore,
-    matchedKeywords: keywordAnalysis.matchedKeywords,
-    missingKeywords: keywordAnalysis.missingKeywords,
+    matchedKeywords: aiMatchedKeywords,
+    missingKeywords: aiMissingKeywords,
     skillsGaps,
     suggestions,
     aiUnavailable,

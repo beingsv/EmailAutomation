@@ -5,6 +5,7 @@
 
 import { PDFParse } from 'pdf-parse';
 import { join } from 'path';
+import { pathToFileURL } from 'url';
 
 export interface PdfParseResult {
   text: string;
@@ -26,7 +27,9 @@ function ensureWorker() {
       'cjs',
       'pdf.worker.mjs'
     );
-    PDFParse.setWorker(workerPath);
+    // Convert to file:// URL for Windows compatibility
+    const workerUrl = pathToFileURL(workerPath).href;
+    PDFParse.setWorker(workerUrl);
   } catch (err) {
     console.error('[PDF Parser] Failed to set worker:', err);
   }

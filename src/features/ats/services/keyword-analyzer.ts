@@ -122,6 +122,26 @@ const TECHNICAL_PATTERNS = [
   /^(accessibility|a11y|i18n|seo|pwa|spa|ssr|ssg|isr|csr|responsive|animation|framer.?motion|gsap|three\.?js|webgl|canvas|svg)$/i,
   // Infrastructure
   /^(s3|ec2|lambda|ecs|eks|rds|cloudfront|route53|iam|vpc|cdn|saas|paas|iaas|load.?balancing|caching|cdn|dns|ssl|tls|https)$/i,
+  // Data Engineering & ETL
+  /^(etl|elt|informatica|iics|idmc|talend|datastage|ssis|pentaho|nifi|dbt|fivetran|stitch|matillion|snaplogic|mulesoft)$/i,
+  // Data Warehouses & Lakes
+  /^(snowflake|redshift|bigquery|synapse|databricks|teradata|vertica|clickhouse|dremio|lakehouse|delta.?lake|iceberg|hudi)$/i,
+  // Data concepts
+  /^(cdc|scd|kimball|inmon|dimensional|star.?schema|snowflake.?schema|data.?mesh|data.?fabric|data.?lake|data.?warehouse|olap|oltp)$/i,
+  // Big Data
+  /^(hdfs|hive|sqoop|pig|presto|trino|flink|beam|storm|samza|zookeeper|yarn|mapreduce)$/i,
+  // Scripting & Languages (extended)
+  /^(plsql|pl\/sql|tsql|unix|linux|perl|awk|sed|cron|makefile|cmake)$/i,
+  // Cloud services (extended)
+  /^(adls|blob.?storage|glue|athena|emr|kinesis|sqs|sns|eventbridge|step.?functions|fargate|ecs|ecr|cloudwatch|cloudtrail)$/i,
+  // API & Integration
+  /^(soap|wsdl|xml|json|yaml|csv|parquet|avro|orc|protobuf|thrift)$/i,
+  // Security & Auth (extended)
+  /^(ldap|kerberos|encryption|hashing|rbac|abac|oauth2|oidc|saml2|mfa|2fa)$/i,
+  // Monitoring & Observability
+  /^(elk|logstash|fluentd|jaeger|zipkin|opentelemetry|nagios|zabbix|pagerduty|opsgenie)$/i,
+  // Version control & CI/CD (extended)
+  /^(svn|mercurial|perforce|bamboo|teamcity|argocd|spinnaker|harness|octopus)$/i,
 ];
 
 const MIN_JD_LENGTH = 100;
@@ -181,6 +201,20 @@ const COMPOUND_TERMS: [RegExp, string][] = [
   [/graphql/gi, 'graphql'],
   [/web[\s\-]?socket/gi, 'websocket'],
   [/micro[\s\-]?services/gi, 'microservices'],
+  // Data Engineering compound terms
+  [/power[\s\-]?center/gi, 'powercenter'],
+  [/data[\s\-]?stage/gi, 'datastage'],
+  [/big[\s\-]?query/gi, 'bigquery'],
+  [/red[\s\-]?shift/gi, 'redshift'],
+  [/snow[\s\-]?flake/gi, 'snowflake'],
+  [/data[\s\-]?bricks/gi, 'databricks'],
+  [/pl[\s\/]?sql/gi, 'plsql'],
+  [/delta[\s\-]?lake/gi, 'delta-lake'],
+  [/data[\s\-]?lake/gi, 'data-lake'],
+  [/data[\s\-]?warehouse/gi, 'data-warehouse'],
+  [/data[\s\-]?mesh/gi, 'data-mesh'],
+  [/data[\s\-]?fabric/gi, 'data-fabric'],
+  [/star[\s\-]?schema/gi, 'star-schema'],
 ];
 
 /**

@@ -88,61 +88,174 @@ RULES:
 
 /**
  * Parses the AI response to extract categorized questions and tips.
- * Handles the structured text format with category headers.
+ * Handles multiple formats: structured text, markdown, and mixed.
  */
 export function parseInterviewPrepResponse(response: string): InterviewPrepResult {
+  let questions: InterviewQuestion[] = [];
+  let tips: string[] = [];
+
+  // Try structured format first (QUESTIONS: / [TECHNICAL] / Q: / A:)
+  questions = parseStructuredFormat(response);
+
+  // If structured parsing failed, try markdown format
+  if (questions.length === 0) {
+    questions = parseMarkdownFormat(response);
+  }
+
+  // If still nothing, try generic Q&A extraction
+  if (questions.length === 0) {
+    questions = extractQAPairsFallback(response);
+  }
+
+  // Extract tips from various formats
+  tips = extractTips(response);
+
+  return { questions, tips };
+}
+
+/**
+ * Parses the strict structured format with QUESTIONS:/[TECHNICAL]/Q:/A: markers.
+ */
+function parseStructuredFormat(response: string): InterviewQuestion[] {
   const questions: InterviewQuestion[] = [];
-  const tips: string[] = [];
 
-  // Extract the QUESTIONS section
   const questionsMatch = response.match(/QUESTIONS\s*:([\s\S]*?)(?=\nTIPS\s*:|$)/i);
-  const tipsMatch = response.match(/TIPS\s*:([\s\S]*)$/i);
+  if (!questionsMatch) return questions;
 
-  if (questionsMatch) {
-    const questionsSection = questionsMatch[1];
+  const questionsSection = questionsMatch[1];
+  const categories: { pattern: RegExp; category: QuestionCategory }[] = [
+    { pattern: /\[TECHNICAL\]([\s\S]*?)(?=\[BEHAVIORAL\]|\[ROLE[- ]SPECIFIC\]|$)/i, category: 'technical' },
+    { pattern: /\[BEHAVIORAL\]([\s\S]*?)(?=\[TECHNICAL\]|\[ROLE[- ]SPECIFIC\]|$)/i, category: 'behavioral' },
+    { pattern: /\[ROLE[- ]SPECIFIC\]([\s\S]*?)(?=\[TECHNICAL\]|\[BEHAVIORAL\]|$)/i, category: 'role-specific' },
+  ];
 
-    // Parse each category
-    const categories: { pattern: RegExp; category: QuestionCategory }[] = [
-      { pattern: /\[TECHNICAL\]([\s\S]*?)(?=\[BEHAVIORAL\]|\[ROLE[- ]SPECIFIC\]|$)/i, category: 'technical' },
-      { pattern: /\[BEHAVIORAL\]([\s\S]*?)(?=\[TECHNICAL\]|\[ROLE[- ]SPECIFIC\]|$)/i, category: 'behavioral' },
-      { pattern: /\[ROLE[- ]SPECIFIC\]([\s\S]*?)(?=\[TECHNICAL\]|\[BEHAVIORAL\]|$)/i, category: 'role-specific' },
-    ];
-
-    for (const { pattern, category } of categories) {
-      const categoryMatch = questionsSection.match(pattern);
-      if (categoryMatch) {
-        const categoryText = categoryMatch[1];
-        const qaPairs = extractQAPairs(categoryText);
-        for (const qa of qaPairs) {
-          questions.push({
-            question: qa.question,
-            category,
-            suggestedAnswer: qa.answer,
-          });
-        }
+  for (const { pattern, category } of categories) {
+    const categoryMatch = questionsSection.match(pattern);
+    if (categoryMatch) {
+      const qaPairs = extractQAPairs(categoryMatch[1]);
+      for (const qa of qaPairs) {
+        questions.push({ question: qa.question, category, suggestedAnswer: qa.answer });
       }
     }
   }
 
-  // If structured parsing failed, try a fallback approach
-  if (questions.length === 0) {
-    const fallbackQuestions = extractQAPairsFallback(response);
-    questions.push(...fallbackQuestions);
+  return questions;
+}
+
+/**
+ * Parses markdown-formatted responses with ## headers and **bold** questions.
+ * Handles formats like:
+ * ## Technical Questions
+ * **1. Question text?**
+ * Answer text...
+ */
+function parseMarkdownFormat(response: string): InterviewQuestion[] {
+  const questions: InterviewQuestion[] = [];
+
+  // Split by section headers (## or ### with category keywords)
+  const sections = response.split(/#{2,3}\s+/);
+
+  for (const section of sections) {
+    if (!section.trim()) continue;
+
+    // Determine category from section header
+    const firstLine = section.split('\n')[0].toLowerCase();
+    let category: QuestionCategory = 'technical';
+
+    if (firstLine.includes('behavioral') || firstLine.includes('behaviour') || firstLine.includes('situational')) {
+      category = 'behavioral';
+    } else if (firstLine.includes('role') || firstLine.includes('specific') || firstLine.includes('company') || firstLine.includes('position')) {
+      category = 'role-specific';
+    } else if (firstLine.includes('technical') || firstLine.includes('coding') || firstLine.includes('skill')) {
+      category = 'technical';
+    } else if (firstLine.includes('tip') || firstLine.includes('preparation') || firstLine.includes('advice')) {
+      continue; // Skip tips section, handled separately
+    } else {
+      continue; // Skip non-question sections
+    }
+
+    // Extract Q&A pairs from this section
+    // Pattern 1: **N. Question?** followed by answer text
+    const boldQPattern = /\*\*\d*\.?\s*(.*?\?)\*\*\s*\n([\s\S]*?)(?=\*\*\d*\.?\s*.*?\?\*\*|$)/g;
+    let match;
+    while ((match = boldQPattern.exec(section)) !== null) {
+      const question = match[1].trim();
+      const answer = match[2].replace(/^\s*[-•]\s*/gm, '').trim();
+      if (question && answer) {
+        questions.push({ question, category, suggestedAnswer: answer });
+      }
+    }
+
+    // Pattern 2: Numbered questions without bold: "1. Question?\n   Answer"
+    if (questions.filter(q => q.category === category).length === 0) {
+      const numberedPattern = /\d+\.\s*\*{0,2}(.*?\?)\*{0,2}\s*\n([\s\S]*?)(?=\d+\.\s*\*{0,2}.*?\?|$)/g;
+      while ((match = numberedPattern.exec(section)) !== null) {
+        const question = match[1].trim();
+        const answer = match[2].replace(/^\s*[-•]\s*/gm, '').trim();
+        if (question && answer && answer.length > 10) {
+          questions.push({ question, category, suggestedAnswer: answer });
+        }
+      }
+    }
+
+    // Pattern 3: "Q:" / "A:" within markdown sections
+    const qaPairs = extractQAPairs(section);
+    if (qaPairs.length > 0 && questions.filter(q => q.category === category).length === 0) {
+      for (const qa of qaPairs) {
+        questions.push({ question: qa.question, category, suggestedAnswer: qa.answer });
+      }
+    }
   }
 
-  // Extract tips
+  return questions;
+}
+
+/**
+ * Extracts tips from various response formats.
+ */
+function extractTips(response: string): string[] {
+  const tips: string[] = [];
+
+  // Try structured TIPS: section
+  const tipsMatch = response.match(/TIPS\s*:([\s\S]*)$/i);
   if (tipsMatch) {
-    const tipsText = tipsMatch[1];
-    const tipLines = tipsText.split('\n');
+    const tipLines = tipsMatch[1].split('\n');
     for (const line of tipLines) {
-      const trimmed = line.replace(/^[\s\-*•\d.]+/, '').trim();
-      if (trimmed.length > 0) {
+      const trimmed = line.replace(/^[\s\-*•\d.]+/, '').replace(/\*\*/g, '').trim();
+      if (trimmed.length > 10) {
         tips.push(trimmed);
       }
     }
   }
 
-  return { questions, tips };
+  // Try markdown tips section (## Tips / ## Preparation Tips)
+  if (tips.length === 0) {
+    const tipsSectionMatch = response.match(/#{2,3}\s*(?:🎯\s*)?(?:Preparation\s+)?Tips?\s*\n([\s\S]*?)(?=#{2,3}\s|$)/i);
+    if (tipsSectionMatch) {
+      const tipLines = tipsSectionMatch[1].split('\n');
+      for (const line of tipLines) {
+        const trimmed = line.replace(/^[\s\-*•\d.]+/, '').replace(/\*\*/g, '').replace(/^\*\*.*?\*\*:?\s*/, '').trim();
+        if (trimmed.length > 10 && !trimmed.startsWith('#')) {
+          tips.push(trimmed);
+        }
+      }
+    }
+  }
+
+  // Try numbered list anywhere with "tip" context
+  if (tips.length === 0) {
+    const numberedTips = response.match(/\d+\.\s*\*\*(.*?)\*\*:?\s*(.*)/g);
+    if (numberedTips) {
+      for (const tip of numberedTips) {
+        const cleaned = tip.replace(/^\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+        if (cleaned.length > 10) {
+          tips.push(cleaned);
+        }
+      }
+    }
+  }
+
+  return tips;
 }
 
 /**
@@ -379,7 +492,9 @@ export async function generatePrep(
   }
 
   // Parse the AI response
+  console.log('[Interview Prep] AI response (first 500 chars):', aiContent.slice(0, 500));
   let result = parseInterviewPrepResponse(aiContent);
+  console.log('[Interview Prep] Parsed questions:', result.questions.length, 'tips:', result.tips.length);
 
   // Trim if over limits
   result = trimResult(result);
