@@ -21,14 +21,6 @@ vi.mock('./pdf-parser.service', () => ({
   extractTextFromPdf: vi.fn(),
 }));
 
-vi.mock('fs', () => ({
-  promises: {
-    mkdir: vi.fn().mockResolvedValue(undefined),
-    writeFile: vi.fn().mockResolvedValue(undefined),
-    unlink: vi.fn().mockResolvedValue(undefined),
-  },
-}));
-
 import { prisma } from '@/shared/lib/db';
 import { extractTextFromPdf } from './pdf-parser.service';
 
@@ -134,7 +126,7 @@ describe('Resume Service', () => {
       // Simulate existing resume
       mockPrismaResume.findUnique.mockResolvedValue({
         userId,
-        filePath: '/some/path/old-resume.pdf',
+        fileData: Buffer.from('%PDF-old'),
       });
 
       const longText = 'B'.repeat(100);
@@ -185,7 +177,7 @@ describe('Resume Service', () => {
     it('should delete file and DB record when resume exists', async () => {
       mockPrismaResume.findUnique.mockResolvedValue({
         userId,
-        filePath: '/uploads/test-user-123/resume.pdf',
+        fileData: Buffer.from('%PDF-existing'),
       });
 
       await deleteResume(userId);

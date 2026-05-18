@@ -55,10 +55,10 @@ export async function sendEmail(userId: string, email: EmailToSend): Promise<Sen
     });
   }
 
-  // Get resume file path for attachment
+  // Get resume file data for attachment
   const resume = await prisma.resume.findUnique({
     where: { userId },
-    select: { filePath: true, filename: true },
+    select: { fileData: true, filename: true },
   });
 
   const transport = createTransport(config);
@@ -69,7 +69,7 @@ export async function sendEmail(userId: string, email: EmailToSend): Promise<Sen
       to: string;
       subject: string;
       text: string;
-      attachments?: Array<{ filename: string; path: string }>;
+      attachments?: Array<{ filename: string; content: Buffer }>;
     } = {
       from: config.username,
       to: email.to,
@@ -78,11 +78,11 @@ export async function sendEmail(userId: string, email: EmailToSend): Promise<Sen
     };
 
     // Attach resume if available
-    if (resume?.filePath) {
+    if (resume?.fileData) {
       mailOptions.attachments = [
         {
           filename: resume.filename || 'resume.pdf',
-          path: resume.filePath,
+          content: Buffer.from(resume.fileData),
         },
       ];
     }

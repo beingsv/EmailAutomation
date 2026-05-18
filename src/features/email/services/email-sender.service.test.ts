@@ -173,7 +173,7 @@ describe('Email Sender Service', () => {
       });
       // Mock resume lookup for attachment
       mockResumeFindUnique.mockResolvedValue({
-        filePath: '/uploads/user-1/resume.pdf',
+        fileData: Buffer.from('%PDF-test-content'),
         filename: 'resume.pdf',
       });
       mockSendMail.mockResolvedValue({ messageId: 'msg-123' });

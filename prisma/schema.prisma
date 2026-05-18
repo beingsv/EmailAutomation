@@ -1,7 +1,5 @@
-// To switch to PostgreSQL, change provider to "postgresql" and update DATABASE_URL accordingly
-// e.g., DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -25,7 +23,7 @@ model Resume {
   id             String   @id @default(cuid())
   userId         String   @unique
   filename       String
-  filePath       String
+  fileData       Bytes
   extractedText  String
   characterCount Int
   uploadedAt     DateTime @default(now())
