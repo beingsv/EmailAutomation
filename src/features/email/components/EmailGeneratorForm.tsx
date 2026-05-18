@@ -6,9 +6,10 @@ import { isValidEmail } from "@/shared/lib/validation";
 interface EmailGeneratorFormProps {
   onGenerate: (jobDescription: string, hrEmail: string) => void;
   isGenerating: boolean;
+  onHrEmailChange?: (email: string) => void;
 }
 
-export function EmailGeneratorForm({ onGenerate, isGenerating }: EmailGeneratorFormProps) {
+export function EmailGeneratorForm({ onGenerate, isGenerating, onHrEmailChange }: EmailGeneratorFormProps) {
   const [jobDescription, setJobDescription] = useState("");
   const [hrEmail, setHrEmail] = useState("");
   const [jdError, setJdError] = useState<string | null>(null);
@@ -55,6 +56,7 @@ export function EmailGeneratorForm({ onGenerate, isGenerating }: EmailGeneratorF
 
   function handleEmailChange(value: string) {
     setHrEmail(value);
+    onHrEmailChange?.(value);
     if (emailTouched) {
       if (value && !isValidEmail(value)) {
         setEmailError("Please enter a valid email address.");

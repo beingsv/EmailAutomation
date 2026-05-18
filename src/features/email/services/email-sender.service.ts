@@ -55,15 +55,39 @@ export async function sendEmail(userId: string, email: EmailToSend): Promise<Sen
     });
   }
 
+  // Get resume file path for attachment
+  const resume = await prisma.resume.findUnique({
+    where: { userId },
+    select: { filePath: true, filename: true },
+  });
+
   const transport = createTransport(config);
 
   try {
-    await transport.sendMail({
+    const mailOptions: {
+      from: string;
+      to: string;
+      subject: string;
+      text: string;
+      attachments?: Array<{ filename: string; path: string }>;
+    } = {
       from: config.username,
       to: email.to,
       subject: email.subject,
       text: email.body,
-    });
+    };
+
+    // Attach resume if available
+    if (resume?.filePath) {
+      mailOptions.attachments = [
+        {
+          filename: resume.filename || 'resume.pdf',
+          path: resume.filePath,
+        },
+      ];
+    }
+
+    await transport.sendMail(mailOptions);
 
     // Req 4.2: Return confirmation with recipient and timestamp
     const timestamp = new Date();

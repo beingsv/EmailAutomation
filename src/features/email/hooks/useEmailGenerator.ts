@@ -12,8 +12,10 @@ interface UseEmailGeneratorReturn {
   error: string | null;
   hasResume: boolean | null;
   isCheckingResume: boolean;
+  hrEmail: string;
   generate: (jobDescription: string, hrEmail: string) => Promise<void>;
   sendEmail: () => Promise<void>;
+  setHrEmail: (email: string) => void;
   updateField: (field: keyof GeneratedEmail, value: string) => void;
   clearEmail: () => void;
   clearError: () => void;
@@ -30,6 +32,7 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
   const [hasResume, setHasResume] = useState<boolean | null>(null);
   const [isCheckingResume, setIsCheckingResume] = useState(true);
   const [lastParams, setLastParams] = useState<{ jobDescription: string; hrEmail: string } | null>(null);
+  const [hrEmail, setHrEmailState] = useState("");
 
   // Check if user has a resume on mount
   useEffect(() => {
@@ -52,16 +55,17 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
     checkResume();
   }, []);
 
-  const generate = useCallback(async (jobDescription: string, hrEmail: string) => {
+  const generate = useCallback(async (jobDescription: string, email: string) => {
     setIsGenerating(true);
     setError(null);
-    setLastParams({ jobDescription, hrEmail });
+    setLastParams({ jobDescription, hrEmail: email });
+    setHrEmailState(email);
 
     try {
       const res = await fetch("/api/email/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobDescription, hrEmail }),
+        body: JSON.stringify({ jobDescription, hrEmail: email }),
       });
 
       const data = await res.json();
@@ -112,7 +116,7 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
   }, [lastParams, generate]);
 
   const sendEmail = useCallback(async () => {
-    if (!generatedEmail || !lastParams) return;
+    if (!generatedEmail || !hrEmail) return;
 
     setIsSending(true);
     setSendSuccess(null);
@@ -125,7 +129,7 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: lastParams.hrEmail,
+          to: hrEmail,
           subject: generatedEmail.subject,
           body: fullBody,
         }),
@@ -148,7 +152,11 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
     } finally {
       setIsSending(false);
     }
-  }, [generatedEmail, lastParams]);
+  }, [generatedEmail, hrEmail]);
+
+  const setHrEmail = useCallback((email: string) => {
+    setHrEmailState(email);
+  }, []);
 
   return {
     generatedEmail,
@@ -159,8 +167,10 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
     error,
     hasResume,
     isCheckingResume,
+    hrEmail,
     generate,
     sendEmail,
+    setHrEmail,
     updateField,
     clearEmail,
     clearError,

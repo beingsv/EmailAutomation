@@ -83,12 +83,9 @@ function extractYearsOfExperience(resumeText: string): string {
   // Filter to valid years (not future years beyond next year)
   const validYears = allYears.filter(y => y >= 2000 && y <= currentYear + 1);
 
-  console.log('[extractYearsOfExperience] Years found in experience section:', validYears);
-
   if (validYears.length > 0) {
     const earliestYear = Math.min(...validYears);
     const totalYears = currentYear - earliestYear;
-    console.log('[extractYearsOfExperience] Earliest:', earliestYear, 'Total:', totalYears);
     if (totalYears > 0 && totalYears <= 40) {
       return `${totalYears}+`;
     }
@@ -123,7 +120,6 @@ function extractYearsOfExperience(resumeText: string): string {
  */
 function buildEmailPrompt(resumeText: string, jobDescription: string): string {
   const yearsOfExperience = extractYearsOfExperience(resumeText);
-  console.log('[Email Generator] Extracted years of experience:', yearsOfExperience);
   return `You are a professional job application email writer. Generate a SHORT, GENERIC job application email. Do NOT describe specific projects or technical achievements in detail.
 
 RESUME:
@@ -323,9 +319,7 @@ export async function generateEmail(params: EmailGenerationParams): Promise<Gene
   const prompt = buildEmailPrompt(sanitizedResume, sanitizedJD);
 
   // Calculate years of experience up-front so we can force-correct the AI output
-  console.log('[Email Generator] Resume text (first 1000 chars):', sanitizedResume.slice(0, 1000));
   const correctYears = extractYearsOfExperience(sanitizedResume);
-  console.log('[Email Generator] Extracted years of experience:', correctYears);
 
   // Req 3.1, 3.5: Call AI service
   try {

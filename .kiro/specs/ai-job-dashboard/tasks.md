@@ -285,7 +285,7 @@
 7. Handle edge cases: no resume (400), AI failure (503 with retry), JD too short (400 with message)
 8. Verify: generates categorized questions with answers and tips, validates output structure, handles errors
 
-- [ ] Done
+- [x] Done
 
 ## Task 17: Interview Prep — UI
 
@@ -305,7 +305,7 @@
 9. Style with Tailwind CSS (accordion-style questions, category tabs or sections, tip cards)
 10. Verify: displays categorized questions with expandable answers, shows tips, handles errors
 
-- [ ] Done
+- [x] Done
 
 ## Task 18: Integration and Polish
 
@@ -325,4 +325,4 @@
 9. Test responsive design on mobile viewport sizes
 10. Clean up any unused imports, console.logs, or placeholder code
 
-- [ ] Done
+- [x] Done

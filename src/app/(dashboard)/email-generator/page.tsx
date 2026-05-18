@@ -15,8 +15,10 @@ export default function EmailGeneratorPage() {
     error,
     hasResume,
     isCheckingResume,
+    hrEmail,
     generate,
     sendEmail,
+    setHrEmail,
     updateField,
     retry,
     clearError,
@@ -80,7 +82,7 @@ export default function EmailGeneratorPage() {
         {/* Left column: Form */}
         <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Job Details</h2>
-          <EmailGeneratorForm onGenerate={generate} isGenerating={isGenerating} />
+          <EmailGeneratorForm onGenerate={generate} isGenerating={isGenerating} onHrEmailChange={setHrEmail} />
         </div>
 
         {/* Right column: Preview */}
