@@ -200,8 +200,8 @@ function extractCompoundTerms(text: string): string[] {
 
 /**
  * Extracts meaningful keywords from text.
- * Focuses on technical terms and skill-related words.
- * Filters out generic business/marketing language.
+ * ONLY extracts words that match known technical patterns.
+ * This ensures only actual skills/tools/technologies appear in keyword analysis.
  *
  * Requirement 5.1: Keyword extraction for TF-IDF similarity analysis.
  */
@@ -216,33 +216,16 @@ export function extractKeywords(text: string): string[] {
     keywords.add(term);
   }
 
-  // Then: tokenize and extract individual terms
+  // Then: tokenize and extract ONLY technical terms
   const tokens = tokenizer.tokenize(text.toLowerCase()) || [];
 
   for (const token of tokens) {
-    // Skip short words (< 3 chars) unless they are known technical terms
-    if (token.length < 3 && !isTechnicalTerm(token)) continue;
-
-    // Skip stopwords
-    if (STOPWORDS.has(token)) continue;
-
-    // Skip pure numbers
+    if (token.length < 2) continue;
     if (/^\d+$/.test(token)) continue;
 
-    // Prioritize technical terms; for non-technical words, require 5+ chars
+    // ONLY add if it matches a known technical pattern
     if (isTechnicalTerm(token)) {
       keywords.add(token);
-    } else if (token.length >= 5) {
-      keywords.add(token);
-    }
-  }
-
-  // Also extract multi-word technical terms (bigrams)
-  const words = text.toLowerCase().split(/\s+/);
-  for (let i = 0; i < words.length - 1; i++) {
-    const bigram = `${words[i]} ${words[i + 1]}`.replace(/[^a-z0-9\s.+#]/g, '').trim();
-    if (bigram.length >= 3 && isTechnicalTerm(bigram)) {
-      keywords.add(bigram);
     }
   }
 
