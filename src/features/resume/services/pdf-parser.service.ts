@@ -1,55 +1,28 @@
 /**
  * PDF Parser Service
- * Extracts text content from PDF buffers using pdf-parse v2.
+ * Extracts text content from PDF buffers using unpdf (serverless-compatible).
  */
-
-import { PDFParse } from 'pdf-parse';
-import { join } from 'path';
-import { pathToFileURL } from 'url';
 
 export interface PdfParseResult {
   text: string;
   numPages: number;
 }
 
-let workerInitialized = false;
-
-function ensureWorker() {
-  if (workerInitialized) return;
-  workerInitialized = true;
-  try {
-    const workerPath = join(
-      process.cwd(),
-      'node_modules',
-      'pdf-parse',
-      'dist',
-      'pdf-parse',
-      'cjs',
-      'pdf.worker.mjs'
-    );
-    // Convert to file:// URL for Windows compatibility
-    const workerUrl = pathToFileURL(workerPath).href;
-    PDFParse.setWorker(workerUrl);
-  } catch (err) {
-    console.error('[PDF Parser] Failed to set worker:', err);
-  }
-}
-
 /**
  * Extracts text content from a PDF buffer.
+ * Uses unpdf which works in serverless environments (no DOMMatrix needed).
  * @param buffer - The PDF file as a Buffer
  * @returns Parsed result with extracted text and page count
  * @throws Error if PDF parsing fails entirely
  */
 export async function extractTextFromPdf(buffer: Buffer): Promise<PdfParseResult> {
-  ensureWorker();
+  const { extractText, getDocumentProxy } = await import('unpdf');
 
-  const parser = new PDFParse({ data: buffer });
-  const result = await parser.getText({ pageJoiner: '' });
-  await parser.destroy();
+  const pdf = await getDocumentProxy(new Uint8Array(buffer));
+  const { text, totalPages } = await extractText(pdf, { mergePages: true });
 
   return {
-    text: result.text.trim(),
-    numPages: result.total,
+    text: (text as string).trim(),
+    numPages: totalPages,
   };
 }

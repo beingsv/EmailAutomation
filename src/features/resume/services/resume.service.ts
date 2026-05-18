@@ -5,7 +5,6 @@
  */
 
 import { prisma } from '@/shared/lib/db';
-import { extractTextFromPdf } from './pdf-parser.service';
 import type { ResumeResult } from '../types';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -47,6 +46,8 @@ export async function uploadResume(
   // Extract text from PDF
   let extractedText: string;
   try {
+    // Lazy import to avoid loading pdfjs-dist on GET requests (DOMMatrix not available in serverless)
+    const { extractTextFromPdf } = await import('./pdf-parser.service');
     const parseResult = await extractTextFromPdf(file);
     extractedText = parseResult.text;
   } catch (err) {
