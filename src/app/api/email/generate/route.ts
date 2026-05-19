@@ -54,18 +54,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!hrEmail || typeof hrEmail !== 'string') {
-      throw new AppError({
-        code: 'VALIDATION_ERROR',
-        message: 'HR email address is required',
-        statusCode: 400,
-      });
+      // hrEmail is optional — user can use HR Contact Finder for bulk send instead
     }
 
     // Call the email generator service (handles validation, resume check, AI call)
     const email = await generateEmail({
       userId: session.user.id,
       jobDescription,
-      hrEmail,
+      hrEmail: hrEmail || undefined,
     });
 
     return NextResponse.json(email, { status: 200 });

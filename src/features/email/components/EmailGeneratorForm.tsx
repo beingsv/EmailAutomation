@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { isValidEmail } from "@/shared/lib/validation";
 
 interface EmailGeneratorFormProps {
   onGenerate: (jobDescription: string, hrEmail: string) => void;
@@ -9,23 +8,18 @@ interface EmailGeneratorFormProps {
   onHrEmailChange?: (email: string) => void;
 }
 
-export function EmailGeneratorForm({ onGenerate, isGenerating, onHrEmailChange }: EmailGeneratorFormProps) {
+export function EmailGeneratorForm({ onGenerate, isGenerating }: EmailGeneratorFormProps) {
   const [jobDescription, setJobDescription] = useState("");
-  const [hrEmail, setHrEmail] = useState("");
   const [jdError, setJdError] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [emailTouched, setEmailTouched] = useState(false);
 
   const jdLength = jobDescription.length;
   const jdMinLength = 50;
   const isJdValid = jdLength >= jdMinLength;
-  const isEmailValid = hrEmail.length === 0 || isValidEmail(hrEmail);
-  const canSubmit = isJdValid && hrEmail.length > 0 && isValidEmail(hrEmail) && !isGenerating;
+  const canSubmit = isJdValid && !isGenerating;
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    // Validate JD
     if (!isJdValid) {
       setJdError(`Job description must be at least ${jdMinLength} characters.`);
       return;
@@ -33,37 +27,7 @@ export function EmailGeneratorForm({ onGenerate, isGenerating, onHrEmailChange }
       setJdError(null);
     }
 
-    // Validate email
-    if (!hrEmail || !isValidEmail(hrEmail)) {
-      setEmailError("Please enter a valid email address.");
-      setEmailTouched(true);
-      return;
-    } else {
-      setEmailError(null);
-    }
-
-    onGenerate(jobDescription, hrEmail);
-  }
-
-  function handleEmailBlur() {
-    setEmailTouched(true);
-    if (hrEmail && !isValidEmail(hrEmail)) {
-      setEmailError("Please enter a valid email address.");
-    } else {
-      setEmailError(null);
-    }
-  }
-
-  function handleEmailChange(value: string) {
-    setHrEmail(value);
-    onHrEmailChange?.(value);
-    if (emailTouched) {
-      if (value && !isValidEmail(value)) {
-        setEmailError("Please enter a valid email address.");
-      } else {
-        setEmailError(null);
-      }
-    }
+    onGenerate(jobDescription, "");
   }
 
   return (
@@ -83,7 +47,7 @@ export function EmailGeneratorForm({ onGenerate, isGenerating, onHrEmailChange }
             }
           }}
           placeholder="Paste the job description here (minimum 50 characters)..."
-          rows={8}
+          rows={10}
           className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-y"
         />
         <div className="mt-1.5 flex items-center justify-between">
@@ -96,27 +60,6 @@ export function EmailGeneratorForm({ onGenerate, isGenerating, onHrEmailChange }
             {jdLength}/{jdMinLength} characters {isJdValid ? "✓" : "(minimum)"}
           </span>
         </div>
-      </div>
-
-      {/* HR Email Input */}
-      <div>
-        <label htmlFor="hrEmail" className="block text-sm font-medium text-gray-300 mb-2">
-          HR / Recruiter Email
-        </label>
-        <input
-          id="hrEmail"
-          type="email"
-          value={hrEmail}
-          onChange={(e) => handleEmailChange(e.target.value)}
-          onBlur={handleEmailBlur}
-          placeholder="hr@company.com"
-          className={`w-full rounded-lg border ${
-            emailError ? "border-red-700" : "border-gray-700"
-          } bg-gray-800 px-4 py-3 text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none`}
-        />
-        {emailError && (
-          <p className="mt-1.5 text-sm text-red-400">{emailError}</p>
-        )}
       </div>
 
       {/* Generate Button */}

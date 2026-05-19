@@ -292,8 +292,8 @@ export async function generateEmail(params: EmailGenerationParams): Promise<Gene
     });
   }
 
-  // Req 3.6: Validate HR email format
-  if (!isValidEmail(hrEmail)) {
+  // Req 3.6: Validate HR email format (only if provided)
+  if (hrEmail && !isValidEmail(hrEmail)) {
     throw new AppError({
       code: 'VALIDATION_ERROR',
       message: 'Invalid HR email address format',

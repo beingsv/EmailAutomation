@@ -1,7 +1,7 @@
 export interface EmailGenerationParams {
   userId: string;
   jobDescription: string;
-  hrEmail: string;
+  hrEmail?: string;
 }
 
 export interface GeneratedEmail {

@@ -1,9 +1,15 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { EmailGeneratorForm } from "@/features/email/components/EmailGeneratorForm";
 import { EmailPreview } from "@/features/email/components/EmailPreview";
 import { useEmailGenerator } from "@/features/email/hooks/useEmailGenerator";
+import { ContactSearchBar } from "@/features/hr-contact-finder/components/ContactSearchBar";
+import { ContactList } from "@/features/hr-contact-finder/components/ContactList";
+import { BulkSendProgress } from "@/features/hr-contact-finder/components/BulkSendProgress";
+import { useContactFinder } from "@/features/hr-contact-finder/hooks/useContactFinder";
+import { ToastContainer, useToast } from "@/shared/components/Toast";
 
 export default function EmailGeneratorPage() {
   const {
@@ -23,6 +29,74 @@ export default function EmailGeneratorPage() {
     retry,
     clearError,
   } = useEmailGenerator();
+
+  const {
+    contacts,
+    isSearching,
+    isSending: isBulkSending,
+    sendProgress,
+    sendResults,
+    error: contactError,
+    companyName,
+    selectedContacts,
+    searchContacts,
+    refreshContacts,
+    toggleContact,
+    toggleAll,
+    sendToSelected,
+    setCompanyName,
+    clearResults,
+  } = useContactFinder();
+
+  const [lastJobDescription, setLastJobDescription] = useState("");
+  const [manualEmail, setManualEmail] = useState("");
+  const { toasts, addToast, dismissToast } = useToast();
+
+  // Show toast for send success/error
+  useEffect(() => {
+    if (sendSuccess) {
+      addToast("success", sendSuccess);
+    }
+  }, [sendSuccess]);
+
+  useEffect(() => {
+    if (sendError) {
+      addToast("error", sendError);
+    }
+  }, [sendError]);
+
+  // Generate email and auto-fetch HR contacts from the JD
+  const handleGenerate = async (jobDescription: string, email: string) => {
+    setLastJobDescription(jobDescription);
+    await generate(jobDescription, email);
+    // After generation, automatically search for HR contacts using the JD
+    searchContacts({
+      companyName: companyName.trim() || undefined,
+      jobDescription,
+    });
+  };
+
+  // Handle contact search
+  const handleSearchContacts = () => {
+    searchContacts({
+      companyName: companyName.trim() || undefined,
+      jobDescription: lastJobDescription || undefined,
+    });
+  };
+
+  // Handle bulk send with the generated email subject and body
+  const handleSendToSelected = () => {
+    if (!generatedEmail) return;
+    const fullBody = `${generatedEmail.greeting}\n\n${generatedEmail.body}\n\n${generatedEmail.closing}`;
+    sendToSelected(generatedEmail.subject, fullBody);
+  };
+
+  // Handle manual single send to a typed email
+  const handleManualSend = () => {
+    if (!generatedEmail || !manualEmail) return;
+    setHrEmail(manualEmail);
+    sendEmail();
+  };
 
   // Loading state while checking resume
   if (isCheckingResume) {
@@ -74,18 +148,21 @@ export default function EmailGeneratorPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Email Generator</h1>
-        <p className="mt-1 text-gray-400">Generate tailored job application emails using AI.</p>
+        <p className="mt-1 text-gray-400">Paste a job description, generate a tailored email, then find and send to HR contacts.</p>
       </div>
 
-      {/* Two-column layout */}
+      {/* Step 1: Job Description + Generate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left column: Form */}
+        {/* Left column: Form (JD only, no HR email) */}
         <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Job Details</h2>
-          <EmailGeneratorForm onGenerate={generate} isGenerating={isGenerating} onHrEmailChange={setHrEmail} />
+          <h2 className="text-lg font-semibold text-white mb-4">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-xs font-bold text-white mr-2">1</span>
+            Paste Job Description
+          </h2>
+          <EmailGeneratorForm onGenerate={handleGenerate} isGenerating={isGenerating} onHrEmailChange={setHrEmail} />
         </div>
 
-        {/* Right column: Preview */}
+        {/* Right column: Email Preview */}
         <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Email Preview</h2>
 
@@ -99,10 +176,7 @@ export default function EmailGeneratorPage() {
                 <div className="flex-1">
                   <p className="text-sm text-red-400">{error}</p>
                   <button
-                    onClick={() => {
-                      clearError();
-                      retry();
-                    }}
+                    onClick={() => { clearError(); retry(); }}
                     className="mt-2 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors"
                   >
                     Try again
@@ -124,26 +198,9 @@ export default function EmailGeneratorPage() {
           {/* Generated email preview */}
           {!isGenerating && generatedEmail && (
             <>
-              {sendSuccess && (
-                <div className="rounded-lg border border-green-700 bg-green-900/30 p-4 mb-4">
-                  <p className="text-sm text-green-400 flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    {sendSuccess}
-                  </p>
-                </div>
-              )}
-              {sendError && (
-                <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 mb-4">
-                  <p className="text-sm text-red-400">{sendError}</p>
-                </div>
-              )}
               <EmailPreview
                 email={generatedEmail}
                 onUpdateField={updateField}
-                onSend={sendEmail}
-                isSending={isSending}
               />
             </>
           )}
@@ -155,11 +212,119 @@ export default function EmailGeneratorPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               <p className="text-sm text-gray-400">Your generated email will appear here</p>
-              <p className="text-xs text-gray-500 mt-1">Fill in the job details and click Generate</p>
+              <p className="text-xs text-gray-500 mt-1">Paste a job description and click Generate</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Step 2: Find HR Contacts & Send — only show after email is generated */}
+      {generatedEmail && (
+        <div className="rounded-lg border border-gray-800 bg-gray-900 p-6 space-y-5">
+          <h2 className="text-lg font-semibold text-white">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-xs font-bold text-white mr-2">2</span>
+            Find HR Contacts &amp; Send
+          </h2>
+          <p className="text-sm text-gray-400 -mt-3">
+            Search for HR contacts at the company, or enter an email manually to send directly.
+          </p>
+
+          {/* Contact error */}
+          {contactError && (
+            <div className="rounded-lg border border-red-700 bg-red-900/30 p-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm text-red-400">{contactError}</p>
+                  <button onClick={clearResults} className="mt-2 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contact Search */}
+          <ContactSearchBar
+            companyName={companyName}
+            onCompanyNameChange={setCompanyName}
+            onSearch={handleSearchContacts}
+            isSearching={isSearching}
+          />
+
+          {/* Contact list */}
+          {contacts.length > 0 && (
+            <ContactList
+              contacts={contacts}
+              selectedContacts={selectedContacts}
+              onToggleContact={toggleContact}
+              onToggleAll={toggleAll}
+              onSendToSelected={handleSendToSelected}
+              onRefresh={refreshContacts}
+              isSending={isBulkSending}
+            />
+          )}
+
+          {/* Bulk send progress */}
+          <BulkSendProgress
+            sendProgress={sendProgress}
+            sendResults={sendResults}
+            isSending={isBulkSending}
+          />
+
+          {/* Manual send option — divider */}
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-700" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-gray-900 px-3 text-gray-500">or send manually</span>
+            </div>
+          </div>
+
+          {/* Manual email input + send */}
+          <div className="flex gap-3">
+            <input
+              type="email"
+              value={manualEmail}
+              onChange={(e) => {
+                setManualEmail(e.target.value);
+                setHrEmail(e.target.value);
+              }}
+              placeholder="Enter HR email manually (e.g. hr@company.com)"
+              className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleManualSend}
+              disabled={!manualEmail || isSending}
+              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSending ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                  Send
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
