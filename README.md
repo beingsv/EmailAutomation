@@ -1,103 +1,242 @@
-# AI Job Dashboard
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/PostgreSQL-Supabase-3ECF8E?style=for-the-badge&logo=supabase" alt="Supabase" />
+</p>
 
-A full-stack Next.js application that helps job seekers manage their application process through AI-powered tools. Upload your resume, generate tailored application emails, check ATS compatibility scores, and prepare for interviews — all in one place.
+<h1 align="center">🚀 AI Job Application Dashboard</h1>
 
-## Features
+<p align="center">
+  <strong>Your AI-powered job hunting companion — generate tailored emails, find HR contacts, score your resume, and prep for interviews.</strong>
+</p>
 
-- **Authentication** — Secure registration and login with account lockout protection
-- **Resume Management** — Upload PDF resumes with automatic text extraction
-- **Email Generator** — AI-generated job application emails tailored to your resume and the job description
-- **Email Sending** — Send emails directly via Gmail SMTP with encrypted credential storage
-- **ATS Scorer** — Hybrid keyword/AI analysis to check resume-job description compatibility (0-100 score)
-- **Interview Prep** — AI-generated interview questions categorized by type with suggested answers
-- **Degraded Mode** — Non-AI features remain accessible when the AI service is unavailable
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#demo">Demo</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#tech-stack">Tech Stack</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#environment-variables">Environment Variables</a>
+</p>
 
-## Tech Stack
+---
 
-- **Framework:** Next.js 16 (App Router, TypeScript)
-- **Styling:** Tailwind CSS 4 (dark mode)
-- **Database:** SQLite via Prisma ORM (PostgreSQL-compatible)
-- **Auth:** NextAuth.js with credentials provider
-- **AI:** Ollama Cloud API (Gemma 4 31b-cloud)
-- **Email:** Nodemailer with Gmail SMTP
-- **PDF Parsing:** pdf-parse
-- **Testing:** Vitest + fast-check (property-based testing)
+## ✨ Features
 
-## Prerequisites
+### 📧 AI Email Generator
+Paste a job description and get a professionally crafted application email in seconds. The AI analyzes your resume and tailors the email to match the job requirements.
+
+### 🔍 HR Contact Finder
+Automatically discovers HR and recruiting contacts at target companies using the Hunter.io API. Finds real email addresses with confidence scores so you can send directly to decision-makers.
+
+### 📨 Bulk Email Sending
+Select multiple HR contacts and send your application email to all of them with one click. Real-time progress tracking shows delivery status for each recipient.
+
+### 📊 ATS Resume Scorer
+Score your resume against any job description. Get keyword match analysis, missing skills breakdown, and actionable suggestions to improve your ATS compatibility.
+
+### 🎤 Interview Prep
+AI-generated interview questions based on the job description and your resume. Practice with role-specific technical and behavioral questions.
+
+### 📄 Resume Management
+Upload and manage your resume. The system extracts text for AI analysis and attaches it automatically to outgoing emails.
+
+### ⚙️ SMTP Configuration
+Configure your own email sending (Gmail, Outlook, custom SMTP). Encrypted credential storage with connection testing.
+
+---
+
+## 🎯 How It Works
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. Paste Job Description                               │
+│     ↓                                                   │
+│  2. Click "Generate Email" → AI crafts your email       │
+│     ↓                                                   │
+│  3. HR contacts auto-discovered from company name       │
+│     ↓                                                   │
+│  4. Select contacts → "Send to Selected" → Done! 🎉    │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
 
 - Node.js 18+
-- npm
+- PostgreSQL database (or [Supabase](https://supabase.com) free tier)
+- [Hunter.io](https://hunter.io) free API key (25 searches/month)
+- [Ollama Cloud](https://ollama.com) API key for AI features
 
-## Setup
+### Installation
 
-1. **Clone the repository**
+```bash
+# Clone the repository
+git clone https://github.com/your-username/email-automation.git
+cd email-automation
 
-   ```bash
-   git clone <repository-url>
-   cd EmailAutomation
-   ```
+# Install dependencies
+npm install
 
-2. **Install dependencies**
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your credentials
 
-   ```bash
-   npm install
-   ```
+# Push database schema
+npx prisma db push
 
-3. **Configure environment variables**
+# Start development server
+npm run dev
+```
 
-   ```bash
-   cp .env.example .env.local
-   ```
+Open [http://localhost:3000](http://localhost:3000) and start applying to jobs!
 
-   Edit `.env.local` and fill in your values:
-   - `NEXTAUTH_SECRET` — Generate with `openssl rand -base64 32`
-   - `OLLAMA_API_KEY` — Your Ollama Cloud API key
-   - `ENCRYPTION_KEY` — Generate with `openssl rand -hex 32`
+---
 
-4. **Initialize the database**
+## 🛠 Tech Stack
 
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
+| Layer | Technology |
+|-------|-----------|
+| **Framework** | Next.js 16 (App Router, Turbopack) |
+| **Language** | TypeScript 6 |
+| **UI** | React 19, Tailwind CSS 4 |
+| **Database** | PostgreSQL via Prisma ORM |
+| **Auth** | NextAuth.js (credentials provider) |
+| **AI** | Ollama Cloud API (Gemma 4) |
+| **Contact Discovery** | Hunter.io Domain Search API |
+| **Email Sending** | Nodemailer (SMTP) |
+| **Testing** | Vitest + fast-check (property-based) |
+| **Deployment** | Vercel |
 
-5. **Start the development server**
+---
 
-   ```bash
-   npm run dev
-   ```
-
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Available Scripts
-
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run tests (Vitest) |
-| `npm run test:watch` | Run tests in watch mode |
-
-## Project Structure
+## 🏗 Architecture
 
 ```
 src/
-├── app/              # Next.js App Router pages and API routes
-├── features/         # Feature-based modules (auth, resume, email, ats, interview-prep, ai-service)
-├── shared/           # Shared components, utilities, and types
-└── middleware.ts     # Route protection
+├── app/                          # Next.js App Router
+│   ├── (auth)/                   # Login & Register pages
+│   ├── (dashboard)/              # Protected dashboard pages
+│   │   ├── ats-scorer/           # ATS resume scoring
+│   │   ├── dashboard/            # Main dashboard
+│   │   ├── email-generator/      # Email generation + HR finder
+│   │   ├── interview-prep/       # Interview preparation
+│   │   ├── resume/               # Resume management
+│   │   └── settings/             # SMTP configuration
+│   └── api/                      # API routes
+│       ├── auth/                  # NextAuth endpoints
+│       ├── ats/                   # ATS scoring
+│       ├── contacts/search/      # HR contact discovery
+│       ├── email/                 # Generate, send, bulk send
+│       ├── interview-prep/       # Interview questions
+│       └── resume/               # Resume upload/retrieval
+├── features/                     # Feature-based modules
+│   ├── ai-service/               # Ollama Cloud integration
+│   ├── ats/                      # ATS scoring logic
+│   ├── email/                    # Email generation & sending
+│   ├── hr-contact-finder/        # Hunter.io + caching + bulk send
+│   └── interview-prep/           # Interview question generation
+└── shared/                       # Shared utilities
+    ├── components/               # Toast, UI primitives
+    └── lib/                      # DB client, validation, errors
 ```
 
-## Gmail SMTP Setup
+### Key Design Decisions
 
-To send emails, configure Gmail SMTP in the Settings page:
+- **Feature-based architecture** — each feature is self-contained with its own services, hooks, components, and types
+- **Cache-first contact lookup** — contacts are cached in PostgreSQL to minimize API credit usage
+- **Graceful degradation** — if Hunter.io fails, pattern-based emails (hr@, careers@, etc.) are generated as fallback
+- **Sequential bulk sending** — emails sent one-at-a-time to respect SMTP rate limits
+- **Real-time progress** — bulk send uses streaming (ReadableStream) for live progress updates
 
-1. Enable 2-Factor Authentication on your Google account
-2. Generate an App Password at https://myaccount.google.com/apppasswords
-3. Use your Gmail address as the username and the App Password as the password
+---
 
-## License
+## 🔐 Environment Variables
 
-Private
+Create a `.env.local` file with:
+
+```env
+# Database (PostgreSQL)
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+
+# NextAuth
+NEXTAUTH_SECRET=your-random-secret
+NEXTAUTH_URL=http://localhost:3000
+
+# AI Service (Ollama Cloud)
+OLLAMA_API_KEY=your-ollama-api-key
+OLLAMA_BASE_URL=https://ollama.com
+OLLAMA_MODEL=gemma4:31b-cloud
+
+# Encryption (for SMTP credentials)
+ENCRYPTION_KEY=your-64-char-hex-string
+
+# Hunter.io (free: 25 searches/month)
+HUNTER_API_KEY=your-hunter-api-key
+```
+
+---
+
+## 📝 Available Scripts
+
+```bash
+npm run dev        # Start dev server (Turbopack)
+npm run build      # Production build
+npm run start      # Start production server
+npm run lint       # Run ESLint
+npm run test       # Run tests (Vitest)
+npm run test:watch # Run tests in watch mode
+```
+
+---
+
+## 🗄 Database
+
+The app uses Prisma with PostgreSQL. Models include:
+
+- **User** — authentication & profile
+- **Resume** — uploaded resume with extracted text
+- **SmtpConfig** — encrypted SMTP credentials
+- **Company** — cached company records for contact lookup
+- **CompanyContact** — cached HR contacts with source & confidence
+
+```bash
+# Push schema changes
+npx prisma db push
+
+# Generate Prisma client
+npx prisma generate
+
+# Open Prisma Studio (database GUI)
+npx prisma studio
+```
+
+---
+
+## 🌐 Deployment
+
+The app is optimized for **Vercel**:
+
+1. Push to GitHub
+2. Import project in Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy!
+
+Make sure to set `NEXTAUTH_URL` to your production URL (e.g., `https://your-app.vercel.app`).
+
+---
+
+## 📄 License
+
+MIT
+
+---
+
+<p align="center">
+  Built with ❤️ for job seekers who want to stand out
+</p>
