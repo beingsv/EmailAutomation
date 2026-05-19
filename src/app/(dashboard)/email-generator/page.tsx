@@ -69,11 +69,20 @@ export default function EmailGeneratorPage() {
   const handleGenerate = async (jobDescription: string, email: string) => {
     setLastJobDescription(jobDescription);
     await generate(jobDescription, email);
-    // After generation, automatically search for HR contacts using the JD
-    searchContacts({
+    // After generation, try to auto-search for HR contacts
+    await searchContacts({
       companyName: companyName.trim() || undefined,
       jobDescription,
     });
+    // If company name wasn't found, show a helpful toast
+    if (!companyName.trim()) {
+      // Check after a tick — companyName state may have been updated by searchContacts
+      setTimeout(() => {
+        if (!companyName.trim()) {
+          addToast("info", "Couldn't detect company name from the JD. Enter it manually to find HR contacts.");
+        }
+      }, 500);
+    }
   };
 
   // Handle contact search
@@ -229,8 +238,8 @@ export default function EmailGeneratorPage() {
             Search for HR contacts at the company, or enter an email manually to send directly.
           </p>
 
-          {/* Contact error */}
-          {contactError && (
+          {/* Contact error — show as toast instead of inline for non-critical errors */}
+          {contactError && contactError !== "Something went wrong" && (
             <div className="rounded-lg border border-red-700 bg-red-900/30 p-4">
               <div className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

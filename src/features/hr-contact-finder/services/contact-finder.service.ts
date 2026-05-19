@@ -48,7 +48,13 @@ export async function findContacts(
   }
 
   if (!companyName) {
-    throw new Error('Company name is required. Please provide a company name or a job description containing one.');
+    return {
+      contacts: [],
+      companyName: '',
+      domain: '',
+      source: 'pattern' as const,
+      fromCache: false,
+    };
   }
 
   // Step 2: Resolve domain
