@@ -3,6 +3,8 @@
 import { Sidebar } from "@/shared/components/Sidebar";
 import { useAIStatus } from "@/shared/components/AIStatusIndicator";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function DashboardLayout({
   children,
@@ -10,9 +12,25 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { isConnected, isLoading: aiLoading } = useAIStatus();
-  const { isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-950">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400" />
