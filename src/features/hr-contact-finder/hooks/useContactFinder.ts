@@ -21,6 +21,7 @@ interface UseContactFinderReturn {
   searchContacts: (params: {
     companyName?: string;
     jobDescription?: string;
+    location?: string;
   }) => Promise<void>;
   refreshContacts: () => Promise<void>;
   toggleContact: (contactId: string) => void;
@@ -46,7 +47,7 @@ export function useContactFinder(): UseContactFinderReturn {
   );
 
   const searchContacts = useCallback(
-    async (params: { companyName?: string; jobDescription?: string }) => {
+    async (params: { companyName?: string; jobDescription?: string; location?: string }) => {
       setIsSearching(true);
       setError(null);
       setSendResults(null);

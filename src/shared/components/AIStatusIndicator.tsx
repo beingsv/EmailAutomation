@@ -30,8 +30,8 @@ export function AIStatusIndicator() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-800 text-gray-400 text-sm">
-        <span className="w-2 h-2 rounded-full bg-gray-500 animate-pulse" />
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-500 text-xs font-medium">
+        <span className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
         <span>Checking AI...</span>
       </div>
     );
@@ -41,10 +41,10 @@ export function AIStatusIndicator() {
 
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${
+      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
         isConnected
-          ? "bg-green-900/30 text-green-400"
-          : "bg-red-900/30 text-red-400"
+          ? "bg-emerald-50 text-emerald-700"
+          : "bg-red-50 text-red-700"
       }`}
       title={
         isConnected
@@ -54,7 +54,7 @@ export function AIStatusIndicator() {
     >
       <span
         className={`w-2 h-2 rounded-full ${
-          isConnected ? "bg-green-400" : "bg-red-400"
+          isConnected ? "bg-emerald-500" : "bg-red-500"
         }`}
       />
       <span>{isConnected ? "AI Connected" : "AI Disconnected"}</span>

@@ -10,33 +10,52 @@ function LoginContent() {
   const registered = searchParams.get("registered");
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 bg-gray-950">
-      <div className="w-full max-w-md">
-        <div className="rounded-xl bg-gray-900 p-8 shadow-2xl border border-gray-800">
-          <h1 className="text-2xl font-bold text-center text-white mb-2">
-            Sign In
-          </h1>
-          <p className="text-center text-sm text-gray-400 mb-6">
-            Welcome back to AI Job Dashboard
-          </p>
+    <main className="relative flex min-h-screen items-center justify-center p-4 bg-gradient-animated overflow-hidden">
+      {/* Background orbs */}
+      <div className="absolute top-1/4 -left-32 w-64 h-64 bg-blue-200/40 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-purple-200/40 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl" />
 
+      <div className="relative w-full max-w-md z-10">
+        {/* Logo / Brand */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/25 mb-4">
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            Welcome back
+          </h1>
+          <p className="text-sm text-gray-500 mt-2">
+            Sign in to your AI Job Dashboard
+          </p>
+        </div>
+
+        {/* Glass card */}
+        <div className="rounded-2xl bg-white/80 backdrop-blur-xl border border-gray-200/60 p-8 shadow-xl shadow-gray-200/50">
           {registered && (
-            <div className="rounded-md bg-green-900/30 border border-green-700 p-3 text-sm text-green-400 mb-4">
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700 mb-6 flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
               Account created successfully. Please sign in.
             </div>
           )}
 
           <LoginForm />
 
-          <p className="mt-6 text-center text-sm text-gray-400">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/register"
-              className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              Create one
-            </Link>
-          </p>
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-center text-sm text-gray-500">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/register"
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+              >
+                Create one
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </main>
@@ -47,14 +66,14 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center p-4 bg-gray-950">
+        <main className="relative flex min-h-screen items-center justify-center p-4 bg-gradient-animated">
           <div className="w-full max-w-md">
-            <div className="rounded-xl bg-gray-900 p-8 shadow-2xl border border-gray-800 animate-pulse">
-              <div className="h-8 bg-gray-700 rounded w-1/2 mx-auto mb-6" />
+            <div className="rounded-2xl bg-white/80 backdrop-blur-xl border border-gray-200/60 p-8 shadow-xl">
+              <div className="h-8 bg-gray-200 rounded-lg w-1/2 mx-auto mb-6 shimmer" />
               <div className="space-y-4">
-                <div className="h-10 bg-gray-700 rounded" />
-                <div className="h-10 bg-gray-700 rounded" />
-                <div className="h-10 bg-gray-700 rounded" />
+                <div className="h-12 bg-gray-100 rounded-lg shimmer" />
+                <div className="h-12 bg-gray-100 rounded-lg shimmer" />
+                <div className="h-12 bg-gray-100 rounded-lg shimmer" />
               </div>
             </div>
           </div>

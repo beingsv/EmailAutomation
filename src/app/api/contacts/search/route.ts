@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { companyName, jobDescription, domain, refresh } = body;
+    const { companyName, jobDescription, domain, refresh, location } = body;
 
     // Validate that at least one search parameter is provided
     if (!companyName && !jobDescription) {
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (refresh && companyName) {
       result = await refreshContacts(companyName);
     } else {
-      result = await findContacts({ companyName, jobDescription, domain });
+      result = await findContacts({ companyName, jobDescription, domain, location });
     }
 
     // Build response

@@ -10,6 +10,7 @@ export interface Contact {
   source: 'hunter' | 'pattern';
   confidence?: number;
   verified?: boolean;
+  verificationStatus?: 'valid' | 'accept_all' | 'unknown' | 'invalid';
   cachedAt: Date;
 }
 
@@ -24,6 +25,7 @@ export interface FindContactsParams {
   companyName?: string;
   jobDescription?: string;
   domain?: string;
+  location?: string;
 }
 
 export interface FindContactsResult {
@@ -38,6 +40,7 @@ export interface ApolloSearchParams {
   companyName: string;
   titles: string[];
   limit: number;
+  location?: string;
 }
 
 export interface ApolloSearchResult {
@@ -51,6 +54,7 @@ export interface ApolloContact {
   email: string;
   confidence?: number;
   verified?: boolean;
+  verificationStatus?: 'valid' | 'accept_all' | 'unknown' | 'invalid';
 }
 
 export interface BulkSendParams {
@@ -83,6 +87,7 @@ export interface ContactSearchRequest {
   jobDescription?: string;
   domain?: string;
   refresh?: boolean;
+  location?: string;
 }
 
 export interface ContactSearchResponse {

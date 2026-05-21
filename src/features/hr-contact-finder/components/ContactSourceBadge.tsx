@@ -9,8 +9,8 @@ export function ContactSourceBadge({ source }: ContactSourceBadgeProps) {
 
   const label = isHunter ? 'Hunter' : 'Pattern';
   const colorClasses = isHunter
-    ? 'border-blue-700 bg-blue-900/30 text-blue-400'
-    : 'border-yellow-700 bg-yellow-900/30 text-yellow-400';
+    ? 'border-blue-200 bg-blue-50 text-blue-600'
+    : 'border-yellow-200 bg-yellow-50 text-yellow-600';
 
   return (
     <span

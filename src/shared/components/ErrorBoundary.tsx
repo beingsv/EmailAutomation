@@ -32,11 +32,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
           <div className="max-w-md w-full text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-red-900/30 flex items-center justify-center mb-6">
+            <div className="mx-auto w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-6">
               <svg
-                className="w-8 h-8 text-red-400"
+                className="w-8 h-8 text-red-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -49,18 +49,18 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Something went wrong</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h1>
             <p className="text-gray-400 mb-6">
               An unexpected error occurred. Please try again or refresh the page.
             </p>
             {this.state.error && (
-              <p className="text-sm text-gray-500 mb-6 font-mono bg-gray-900 rounded-lg p-3 text-left break-all">
+              <p className="text-sm text-gray-400 mb-6 font-mono bg-white rounded-lg p-3 text-left break-all">
                 {this.state.error.message}
               </p>
             )}
             <button
               onClick={this.handleReset}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-gray-900 transition-colors hover:bg-blue-700"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path

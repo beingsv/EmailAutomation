@@ -54,12 +54,12 @@ export function SmtpConfigForm() {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-gray-800 rounded w-1/3" />
-          <div className="h-10 bg-gray-800 rounded" />
-          <div className="h-10 bg-gray-800 rounded" />
-          <div className="h-10 bg-gray-800 rounded" />
+          <div className="h-6 bg-gray-100 rounded w-1/3" />
+          <div className="h-10 bg-gray-100 rounded" />
+          <div className="h-10 bg-gray-100 rounded" />
+          <div className="h-10 bg-gray-100 rounded" />
         </div>
       </div>
     );
@@ -68,20 +68,20 @@ export function SmtpConfigForm() {
   return (
     <div className="space-y-6">
       {/* Current Status */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-3">Connection Status</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Connection Status</h3>
         {status?.configured ? (
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/30 text-green-400 border border-green-700">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-emerald-600 border border-green-200">
               Configured
             </span>
-            <span className="text-gray-300 text-sm">
+            <span className="text-gray-700 text-sm">
               {status.host}:{status.port} — {status.username}
             </span>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/30 text-yellow-400 border border-yellow-700">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/30 text-yellow-700 border border-yellow-700">
               Not Configured
             </span>
             <span className="text-gray-400 text-sm">
@@ -92,8 +92,8 @@ export function SmtpConfigForm() {
       </div>
 
       {/* Configuration Form */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-1">SMTP Configuration</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">SMTP Configuration</h3>
         <p className="text-gray-400 text-sm mb-6">
           Configure your email server settings. Gmail with App Passwords is recommended.
         </p>
@@ -101,7 +101,7 @@ export function SmtpConfigForm() {
         <form className="space-y-4">
           {/* Host */}
           <div>
-            <label htmlFor="smtp-host" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="smtp-host" className="block text-sm font-medium text-gray-700 mb-1">
               SMTP Host
             </label>
             <input
@@ -110,13 +110,13 @@ export function SmtpConfigForm() {
               value={host}
               onChange={(e) => { setHost(e.target.value); handleFieldChange(); }}
               placeholder="smtp.gmail.com"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {/* Port */}
           <div>
-            <label htmlFor="smtp-port" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="smtp-port" className="block text-sm font-medium text-gray-700 mb-1">
               Port
             </label>
             <input
@@ -125,13 +125,13 @@ export function SmtpConfigForm() {
               value={port}
               onChange={(e) => { setPort(e.target.value); handleFieldChange(); }}
               placeholder="587"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {/* Username */}
           <div>
-            <label htmlFor="smtp-username" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="smtp-username" className="block text-sm font-medium text-gray-700 mb-1">
               Email (Username)
             </label>
             <input
@@ -140,13 +140,13 @@ export function SmtpConfigForm() {
               value={username}
               onChange={(e) => { setUsername(e.target.value); handleFieldChange(); }}
               placeholder="you@gmail.com"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label htmlFor="smtp-password" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="smtp-password" className="block text-sm font-medium text-gray-700 mb-1">
               App Password
             </label>
             <input
@@ -155,7 +155,7 @@ export function SmtpConfigForm() {
               value={password}
               onChange={(e) => { setPassword(e.target.value); handleFieldChange(); }}
               placeholder="Your Gmail App Password"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -164,8 +164,8 @@ export function SmtpConfigForm() {
             <div
               className={`p-3 rounded-md border text-sm ${
                 testResult.success
-                  ? "bg-green-900/30 border-green-700 text-green-400"
-                  : "bg-red-900/30 border-red-700 text-red-400"
+                  ? "bg-green-50 border-green-200 text-emerald-600"
+                  : "bg-red-50 border-red-200 text-red-600"
               }`}
             >
               {testResult.success ? (
@@ -188,7 +188,7 @@ export function SmtpConfigForm() {
 
           {/* Save Result */}
           {saveSuccess && (
-            <div className="p-3 rounded-md border bg-green-900/30 border-green-700 text-green-400 text-sm">
+            <div className="p-3 rounded-md border bg-green-50 border-green-200 text-emerald-600 text-sm">
               <span className="flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -199,7 +199,7 @@ export function SmtpConfigForm() {
           )}
 
           {saveError && (
-            <div className="p-3 rounded-md border bg-red-900/30 border-red-700 text-red-400 text-sm">
+            <div className="p-3 rounded-md border bg-red-50 border-red-200 text-red-600 text-sm">
               <span className="flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -215,7 +215,7 @@ export function SmtpConfigForm() {
               type="button"
               onClick={handleTest}
               disabled={!isFormValid || isTesting}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-600 text-gray-900 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isTesting ? (
                 <span className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export function SmtpConfigForm() {
               type="button"
               onClick={handleSave}
               disabled={!isFormValid || !testPassed || isSaving}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-gray-900 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSaving ? (
                 <span className="flex items-center gap-2">
@@ -251,7 +251,7 @@ export function SmtpConfigForm() {
           </div>
 
           {!testPassed && isFormValid && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-400">
               Test the connection before saving. The Save button will be enabled after a successful test.
             </p>
           )}
@@ -259,9 +259,9 @@ export function SmtpConfigForm() {
       </div>
 
       {/* Help Section */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-2">Gmail App Password Setup</h3>
-        <div className="text-sm text-gray-300 space-y-2">
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Gmail App Password Setup</h3>
+        <div className="text-sm text-gray-700 space-y-2">
           <p>
             To use Gmail SMTP, you need to generate an App Password. Your regular Gmail password will not work.
           </p>
@@ -277,7 +277,7 @@ export function SmtpConfigForm() {
               href="https://support.google.com/accounts/answer/185833"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 underline"
+              className="text-blue-600 hover:text-blue-300 underline"
             >
               Learn more about Gmail App Passwords →
             </a>

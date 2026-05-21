@@ -40,30 +40,30 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: (id: 
   }, [toast.id, onDismiss]);
 
   const bgColor = {
-    success: "border-green-700 bg-green-900/90",
-    error: "border-red-700 bg-red-900/90",
-    info: "border-blue-700 bg-blue-900/90",
+    success: "border-emerald-200 bg-white/80 backdrop-blur-xl",
+    error: "border-red-200 bg-white/80 backdrop-blur-xl",
+    info: "border-blue-200 bg-white/80 backdrop-blur-xl",
   }[toast.type];
 
   const textColor = {
-    success: "text-green-300",
-    error: "text-red-300",
-    info: "text-blue-300",
+    success: "text-emerald-700",
+    error: "text-red-700",
+    info: "text-blue-700",
   }[toast.type];
 
   const icon = {
     success: (
-      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
       </svg>
     ),
     error: (
-      <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
       </svg>
     ),
     info: (
-      <svg className="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
@@ -71,7 +71,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: (id: 
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm transition-all duration-300 ${bgColor} ${
+      className={`flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg shadow-gray-200/60 transition-all duration-300 ${bgColor} ${
         isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
       }`}
     >
@@ -82,7 +82,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: (id: 
           setIsVisible(false);
           setTimeout(() => onDismiss(toast.id), 300);
         }}
-        className="text-gray-400 hover:text-white transition-colors"
+        className="text-gray-400 hover:text-gray-700 transition-colors"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

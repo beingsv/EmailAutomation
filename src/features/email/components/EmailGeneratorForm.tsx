@@ -33,8 +33,8 @@ export function EmailGeneratorForm({ onGenerate, isGenerating }: EmailGeneratorF
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Job Description Textarea */}
-      <div>
-        <label htmlFor="jobDescription" className="block text-sm font-medium text-gray-300 mb-2">
+      <div className="space-y-2">
+        <label htmlFor="jobDescription" className="block text-sm font-medium text-gray-600">
           Job Description
         </label>
         <textarea
@@ -48,16 +48,16 @@ export function EmailGeneratorForm({ onGenerate, isGenerating }: EmailGeneratorF
           }}
           placeholder="Paste the job description here (minimum 50 characters)..."
           rows={10}
-          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-y"
+          className="w-full rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 text-gray-900 placeholder-gray-400 transition-all duration-300 focus:bg-white focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-y"
         />
-        <div className="mt-1.5 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <div>
             {jdError && (
-              <p className="text-sm text-red-400">{jdError}</p>
+              <p className="text-xs text-red-600">{jdError}</p>
             )}
           </div>
-          <span className={`text-xs ${isJdValid ? "text-green-400" : "text-gray-400"}`}>
-            {jdLength}/{jdMinLength} characters {isJdValid ? "✓" : "(minimum)"}
+          <span className={`text-xs font-medium ${isJdValid ? "text-emerald-600" : "text-gray-400"}`}>
+            {jdLength}/{jdMinLength} {isJdValid ? "✓" : "min"}
           </span>
         </div>
       </div>
@@ -66,7 +66,11 @@ export function EmailGeneratorForm({ onGenerate, isGenerating }: EmailGeneratorF
       <button
         type="submit"
         disabled={!canSubmit}
-        className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className={`w-full rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2.5 ${
+          canSubmit
+            ? "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.98]"
+            : "bg-gray-300 cursor-not-allowed opacity-50"
+        }`}
       >
         {isGenerating ? (
           <>

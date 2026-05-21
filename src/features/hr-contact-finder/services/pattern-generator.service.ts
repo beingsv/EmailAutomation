@@ -65,6 +65,11 @@ export function deriveDomain(companyName: string): string | null {
     return null;
   }
 
+  // If it already looks like a domain (contains a dot), return as-is
+  if (domain.includes('.')) {
+    return domain;
+  }
+
   return `${domain}.com`;
 }
 

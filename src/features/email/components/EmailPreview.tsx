@@ -35,13 +35,13 @@ export function EmailPreview({ email, onUpdateField, onSend, isSending }: EmailP
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-gray-300">Generated Email</h3>
-        <span className="text-xs text-gray-500">All fields are editable</span>
+        <h3 className="text-sm font-medium text-gray-600">Generated Email</h3>
+        <span className="text-xs text-gray-400">All fields are editable</span>
       </div>
 
       {/* Subject */}
       <div>
-        <label htmlFor="emailSubject" className="block text-xs font-medium text-gray-400 mb-1">
+        <label htmlFor="emailSubject" className="block text-xs font-medium text-gray-500 mb-1">
           Subject
         </label>
         <input
@@ -49,13 +49,13 @@ export function EmailPreview({ email, onUpdateField, onSend, isSending }: EmailP
           type="text"
           value={email.subject}
           onChange={(e) => onUpdateField("subject", e.target.value)}
-          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
         />
       </div>
 
       {/* Greeting */}
       <div>
-        <label htmlFor="emailGreeting" className="block text-xs font-medium text-gray-400 mb-1">
+        <label htmlFor="emailGreeting" className="block text-xs font-medium text-gray-500 mb-1">
           Greeting
         </label>
         <input
@@ -63,13 +63,13 @@ export function EmailPreview({ email, onUpdateField, onSend, isSending }: EmailP
           type="text"
           value={email.greeting}
           onChange={(e) => onUpdateField("greeting", e.target.value)}
-          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
         />
       </div>
 
       {/* Body */}
       <div>
-        <label htmlFor="emailBody" className="block text-xs font-medium text-gray-400 mb-1">
+        <label htmlFor="emailBody" className="block text-xs font-medium text-gray-500 mb-1">
           Body
         </label>
         <textarea
@@ -77,13 +77,13 @@ export function EmailPreview({ email, onUpdateField, onSend, isSending }: EmailP
           value={email.body}
           onChange={(e) => onUpdateField("body", e.target.value)}
           rows={8}
-          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-y"
+          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-y"
         />
       </div>
 
       {/* Closing */}
       <div>
-        <label htmlFor="emailClosing" className="block text-xs font-medium text-gray-400 mb-1">
+        <label htmlFor="emailClosing" className="block text-xs font-medium text-gray-500 mb-1">
           Closing
         </label>
         <input
@@ -91,7 +91,7 @@ export function EmailPreview({ email, onUpdateField, onSend, isSending }: EmailP
           type="text"
           value={email.closing}
           onChange={(e) => onUpdateField("closing", e.target.value)}
-          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
         />
       </div>
 
@@ -100,11 +100,11 @@ export function EmailPreview({ email, onUpdateField, onSend, isSending }: EmailP
         <button
           type="button"
           onClick={handleCopy}
-          className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm font-medium text-gray-100 transition-colors hover:bg-gray-700 flex items-center justify-center gap-2"
+          className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-100 flex items-center justify-center gap-2"
         >
           {copied ? (
             <>
-              <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               Copied!

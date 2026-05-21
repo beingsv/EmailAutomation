@@ -73,7 +73,7 @@ export async function findContacts(
   }
 
   // Step 4: Call Apollo.io
-  return await fetchAndCacheContacts(companyName, domain);
+  return await fetchAndCacheContacts(companyName, domain, params.location);
 }
 
 /**
@@ -111,7 +111,8 @@ export async function refreshContacts(
  */
 async function fetchAndCacheContacts(
   companyName: string,
-  domain: string
+  domain: string,
+  location?: string
 ): Promise<FindContactsResult> {
   let contacts: Contact[];
   let source: 'hunter' | 'pattern';
@@ -124,6 +125,7 @@ async function fetchAndCacheContacts(
       companyName,
       titles: HR_TITLES,
       limit: 10,
+      location,
     });
 
     if (apolloResult.contacts.length > 0) {
@@ -136,6 +138,7 @@ async function fetchAndCacheContacts(
         source: 'hunter' as const,
         confidence: c.confidence,
         verified: c.verified,
+        verificationStatus: c.verificationStatus,
         cachedAt: new Date(),
       }));
       source = 'hunter';

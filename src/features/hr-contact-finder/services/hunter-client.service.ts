@@ -11,6 +11,7 @@
  * Each result includes: email, first_name, last_name, position, department, confidence score.
  */
 
+import { da } from 'zod/locales';
 import type { ApolloSearchParams, ApolloSearchResult, ApolloContact } from '../types';
 
 const HUNTER_API_URL = 'https://api.hunter.io/v2/domain-search';
@@ -56,28 +57,62 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
     // Derive domain from company name
     const domain = deriveDomainForSearch(params.companyName);
 
-    // Build the request URL with query parameters
-    const url = new URL(HUNTER_API_URL);
-    url.searchParams.set('api_key', apiKey);
-    url.searchParams.set('limit', String(limit));
-    url.searchParams.set('department', 'hr');
-    url.searchParams.set('type', 'personal');
+    // Build the request — use POST if location filter is needed
+    let response: Response;
 
-    if (domain) {
-      url.searchParams.set('domain', domain);
+    if (params.location) {
+      // POST request for location-based filtering
+      const countryCode = getCountryCode(params.location);
+      const postBody: Record<string, unknown> = {
+        department: 'hr',
+        type: 'personal',
+        limit,
+        location: {
+          include: [{ country: countryCode }],
+        },
+      };
+
+      if (domain) {
+        postBody.domain = domain;
+      } else {
+        postBody.company = params.companyName;
+      }
+
+      console.log(`[Hunter] Searching (POST) for HR contacts: ${domain ? `domain=${domain}` : `company=${params.companyName}`} | Location: ${params.location}`);
+
+      response = await fetch(`${HUNTER_API_URL}?api_key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': 'application/json',
+        },
+        body: JSON.stringify(postBody),
+        signal: controller.signal,
+      });
     } else {
-      url.searchParams.set('company', params.companyName);
+      // GET request (standard)
+      const url = new URL(HUNTER_API_URL);
+      url.searchParams.set('api_key', apiKey);
+      url.searchParams.set('limit', String(limit));
+      url.searchParams.set('department', 'hr');
+      url.searchParams.set('type', 'personal');
+
+      if (domain) {
+        url.searchParams.set('domain', domain);
+      } else {
+        url.searchParams.set('company', params.companyName);
+      }
+
+      console.log(`[Hunter] Searching (GET) for HR contacts: ${domain ? `domain=${domain}` : `company=${params.companyName}`}`);
+
+      response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+        },
+        signal: controller.signal,
+      });
     }
-
-    console.log(`[Hunter] Searching for HR contacts: ${domain ? `domain=${domain}` : `company=${params.companyName}`}`);
-
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-      },
-      signal: controller.signal,
-    });
 
     console.log(`[Hunter] Response status: ${response.status}`);
 
@@ -115,6 +150,21 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
     const emails = Array.isArray(data?.data?.emails) ? data.data.emails : [];
     const totalResults = data?.meta?.results || emails.length;
 
+  console.log(`Hunter Full Data`, data)
+
+    // Log full Hunter.io response
+    console.log(`[Hunter] --- Full Hunter.io Response ---`);
+    console.log(`[Hunter] Organization: ${data?.data?.organization || 'unknown'}`);
+    console.log(`[Hunter] Domain: ${data?.data?.domain || 'unknown'}`);
+    console.log(`[Hunter] Email pattern: ${data?.data?.pattern || 'unknown'}`);
+    console.log(`[Hunter] Accept-all: ${data?.data?.accept_all}`);
+    console.log(`[Hunter] Results: ${totalResults} total | ${emails.length} returned`);
+    console.log(`[Hunter] Meta:`, JSON.stringify(data?.meta));
+    emails.forEach((e: HunterEmail, i: number) => {
+      console.log(`[Hunter] [${i + 1}] ${e.value} | Confidence: ${e.confidence}% | Verified: ${e.verification?.status || 'N/A'} | Type: ${e.type} | Name: ${e.first_name || ''} ${e.last_name || ''} | Position: ${e.position || 'N/A'} | Dept: ${e.department || 'N/A'} | Seniority: ${e.seniority || 'N/A'}`);
+    });
+    console.log(`[Hunter] --- End Response ---`);
+
     console.log(`[Hunter] Found ${emails.length} emails (total available: ${totalResults})`);
 
     // If no HR contacts found with department filter, try without it
@@ -126,10 +176,18 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
     const contacts: ApolloContact[] = emails
       .filter((e: HunterEmail) => e.value && (e.first_name || e.last_name))
       .filter((e: HunterEmail) => {
+        // Log each email with its confidence and verification status
+        console.log(`[Hunter] Email: ${e.value} | Confidence: ${e.confidence}% | Verified: ${e.verification?.status || 'unknown'} | Name: ${e.first_name} ${e.last_name} | Position: ${e.position}`);
         // Skip emails that are known invalid
-        if (e.verification?.status === 'invalid') return false;
+        if (e.verification?.status === 'invalid') {
+          console.log(`[Hunter] ❌ Skipping ${e.value} — marked as invalid`);
+          return false;
+        }
         // Skip very low confidence emails
-        if (e.confidence !== undefined && e.confidence < 30) return false;
+        if (e.confidence !== undefined && e.confidence < 20) {
+          console.log(`[Hunter] ❌ Skipping ${e.value} — confidence too low (${e.confidence}%)`);
+          return false;
+        }
         return true;
       })
       .map((e: HunterEmail) => ({
@@ -138,6 +196,7 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
         email: e.value,
         confidence: e.confidence,
         verified: e.verification?.status === 'valid',
+        verificationStatus: (e.verification?.status as 'valid' | 'accept_all' | 'unknown' | 'invalid') || 'unknown',
       }));
 
     console.log(`[Hunter] Extracted ${contacts.length} contacts with names and emails`);
@@ -207,7 +266,7 @@ async function searchBroader(
     .filter((e: HunterEmail) => e.value && (e.first_name || e.last_name))
     .filter((e: HunterEmail) => {
       if (e.verification?.status === 'invalid') return false;
-      if (e.confidence !== undefined && e.confidence < 30) return false;
+      if (e.confidence !== undefined && e.confidence < 20) return false;
       return true;
     })
     .map((e: HunterEmail) => ({
@@ -216,6 +275,7 @@ async function searchBroader(
       email: e.value,
       confidence: e.confidence,
       verified: e.verification?.status === 'valid',
+      verificationStatus: (e.verification?.status as 'valid' | 'accept_all' | 'unknown' | 'invalid') || 'unknown',
     }));
 
   console.log(`[Hunter] Broader search found ${contacts.length} contacts`);
@@ -224,6 +284,73 @@ async function searchBroader(
     contacts,
     hasMore: totalResults > limit,
   };
+}
+
+/**
+ * Converts a country name or code to ISO 3166-1 alpha-2 code.
+ * Hunter.io requires ISO codes for location filtering.
+ */
+function getCountryCode(input: string): string {
+  const normalized = input.toLowerCase().trim();
+
+  const countryMap: Record<string, string> = {
+    'india': 'IN',
+    'in': 'IN',
+    'united states': 'US',
+    'usa': 'US',
+    'us': 'US',
+    'united kingdom': 'GB',
+    'uk': 'GB',
+    'gb': 'GB',
+    'canada': 'CA',
+    'ca': 'CA',
+    'australia': 'AU',
+    'au': 'AU',
+    'germany': 'DE',
+    'de': 'DE',
+    'france': 'FR',
+    'fr': 'FR',
+    'singapore': 'SG',
+    'sg': 'SG',
+    'japan': 'JP',
+    'jp': 'JP',
+    'china': 'CN',
+    'cn': 'CN',
+    'brazil': 'BR',
+    'br': 'BR',
+    'netherlands': 'NL',
+    'nl': 'NL',
+    'ireland': 'IE',
+    'ie': 'IE',
+    'israel': 'IL',
+    'il': 'IL',
+    'uae': 'AE',
+    'united arab emirates': 'AE',
+    'ae': 'AE',
+    'sweden': 'SE',
+    'se': 'SE',
+    'switzerland': 'CH',
+    'ch': 'CH',
+    'spain': 'ES',
+    'es': 'ES',
+    'italy': 'IT',
+    'it': 'IT',
+    'south korea': 'KR',
+    'kr': 'KR',
+    'mexico': 'MX',
+    'mx': 'MX',
+    'poland': 'PL',
+    'pl': 'PL',
+    'indonesia': 'ID',
+    'id': 'ID',
+  };
+
+  // If it's already a 2-letter code, return uppercase
+  if (normalized.length === 2) {
+    return countryMap[normalized] || normalized.toUpperCase();
+  }
+
+  return countryMap[normalized] || normalized.toUpperCase().slice(0, 2);
 }
 
 /**
@@ -289,10 +416,14 @@ function deriveDomainForSearch(companyName: string): string | null {
   // Generic derivation: lowercase, remove suffixes, remove non-alpha, add .com
   let domain = normalized
     .replace(/\b(inc|llc|ltd|corp|corporation|limited|pvt|private|technologies|services|consulting|group|solutions)\b/gi, '')
-    .replace(/[^a-z0-9]/g, '')
+    .replace(/[^a-z0-9.]/g, '')
     .trim();
 
   if (!domain) return null;
+
+  // If it already looks like a domain (contains a dot), return as-is
+  if (domain.includes('.')) return domain;
+
   return `${domain}.com`;
 }
 

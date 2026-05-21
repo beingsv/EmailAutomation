@@ -79,7 +79,7 @@ export function ResumeUploader({
           relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200
           ${isDragOver
             ? "border-blue-400 bg-blue-900/20"
-            : "border-gray-700 bg-gray-800/50 hover:border-gray-600 hover:bg-gray-800"
+            : "border-gray-300 bg-gray-100/50 hover:border-gray-300 hover:bg-gray-100"
           }
           ${disabled || isUploading ? "opacity-60 cursor-not-allowed" : ""}
         `}
@@ -87,13 +87,13 @@ export function ResumeUploader({
         {isUploading ? (
           <div className="flex flex-col items-center gap-3 w-full">
             <div className="animate-pulse">
-              <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
-            <p className="text-sm text-gray-300">Uploading...</p>
+            <p className="text-sm text-gray-700">Uploading...</p>
             {/* Progress bar */}
-            <div className="w-full max-w-xs bg-gray-700 rounded-full h-2 overflow-hidden">
+            <div className="w-full max-w-xs bg-gray-200 rounded-full h-2 overflow-hidden">
               <div
                 className="bg-blue-400 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
@@ -106,10 +106,10 @@ export function ResumeUploader({
             <svg className="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-            <p className="text-sm text-gray-300 mb-1">
-              <span className="font-medium text-blue-400">Click to upload</span> or drag and drop
+            <p className="text-sm text-gray-700 mb-1">
+              <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
             </p>
-            <p className="text-xs text-gray-500">PDF only, up to 5MB</p>
+            <p className="text-xs text-gray-400">PDF only, up to 5MB</p>
           </>
         )}
 
