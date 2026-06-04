@@ -12,6 +12,8 @@ export interface Contact {
   verified?: boolean;
   verificationStatus?: 'valid' | 'accept_all' | 'unknown' | 'invalid';
   cachedAt: Date;
+  contactType: 'hr' | 'tech';
+  department?: string;
 }
 
 export interface Company {
@@ -34,6 +36,7 @@ export interface FindContactsResult {
   domain: string;
   source: 'cache' | 'hunter' | 'pattern';
   fromCache: boolean;
+  mappedDepartment?: string;
 }
 
 export interface ApolloSearchParams {
@@ -41,6 +44,7 @@ export interface ApolloSearchParams {
   titles: string[];
   limit: number;
   location?: string;
+  department?: string;
 }
 
 export interface ApolloSearchResult {
@@ -55,6 +59,7 @@ export interface ApolloContact {
   confidence?: number;
   verified?: boolean;
   verificationStatus?: 'valid' | 'accept_all' | 'unknown' | 'invalid';
+  contactType: 'hr' | 'tech';
 }
 
 export interface BulkSendParams {
@@ -104,12 +109,65 @@ export interface BulkSendRequest {
   body: string;
 }
 
+export interface SmartBulkSendRequest {
+  recipients: Array<{
+    email: string;
+    contactType: 'hr' | 'tech';
+  }>;
+  hrEmail: {
+    subject: string;
+    body: string;
+  };
+  referralEmail: {
+    subject: string;
+    body: string;
+  };
+}
+
 export interface BulkSendProgressEvent {
   type: 'progress' | 'complete';
   current?: number;
   total?: number;
   recipientEmail?: string;
+  contactType?: 'hr' | 'tech';
   status?: 'success' | 'failed';
   error?: string;
-  summary?: BulkSendResult;
+  summary?: BulkSendResult | SmartBulkSendResult;
+}
+
+export interface SmartBulkSendParams {
+  userId: string;
+  recipients: Array<{
+    email: string;
+    contactType: 'hr' | 'tech';
+  }>;
+  hrEmail: {
+    subject: string;
+    body: string;
+  };
+  referralEmail: {
+    subject: string;
+    body: string;
+  };
+}
+
+export interface SmartBulkSendProgress {
+  current: number;
+  total: number;
+  recipientEmail: string;
+  contactType: 'hr' | 'tech';
+  status: 'sending' | 'success' | 'failed';
+  error?: string;
+}
+
+export interface SmartBulkSendResult {
+  totalHrSent: number;
+  totalReferralSent: number;
+  totalFailed: number;
+  results: Array<{
+    email: string;
+    contactType: 'hr' | 'tech';
+    success: boolean;
+    error?: string;
+  }>;
 }

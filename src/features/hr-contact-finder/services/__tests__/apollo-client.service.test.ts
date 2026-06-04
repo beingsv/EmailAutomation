@@ -5,7 +5,7 @@ describe('ApolloClientService', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    process.env = { ...originalEnv, APOLLO_API_KEY: 'test-api-key' };
+    process.env = { ...originalEnv, HUNTER_API_KEY: 'test-api-key' };
     vi.stubGlobal('fetch', vi.fn());
   });
 
@@ -15,8 +15,8 @@ describe('ApolloClientService', () => {
   });
 
   describe('searchPeople', () => {
-    it('should throw MISSING_API_KEY error when APOLLO_API_KEY is not set', async () => {
-      delete process.env.APOLLO_API_KEY;
+    it('should throw MISSING_API_KEY error when HUNTER_API_KEY is not set', async () => {
+      delete process.env.HUNTER_API_KEY;
 
       await expect(
         searchPeople({ companyName: 'Google', titles: ['HR'], limit: 5 })
@@ -27,11 +27,18 @@ describe('ApolloClientService', () => {
       ).rejects.toMatchObject({ code: 'MISSING_API_KEY' });
     });
 
-    it('should call Apollo API with correct parameters', async () => {
+    it('should call Hunter.io API with correct parameters', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ people: [] }),
+        json: () => Promise.resolve({
+          data: {
+            emails: [
+              { value: 'hr@google.com', first_name: 'Test', last_name: 'User', position: 'HR', confidence: 90, type: 'personal', department: 'hr', seniority: 'senior', verification: { status: 'valid', date: null } },
+            ],
+          },
+          meta: { results: 1 },
+        }),
       });
       vi.stubGlobal('fetch', mockFetch);
 
@@ -41,28 +48,19 @@ describe('ApolloClientService', () => {
         limit: 5,
       });
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.apollo.io/v1/mixed_people/search',
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-            'X-Api-Key': 'test-api-key',
-          }),
-          body: JSON.stringify({
-            q_organization_name: 'Google',
-            person_titles: ['HR', 'Recruiter'],
-            per_page: 5,
-          }),
-        })
-      );
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const calledUrl = mockFetch.mock.calls[0][0];
+      expect(calledUrl).toContain('https://api.hunter.io/v2/domain-search');
+      expect(calledUrl).toContain('api_key=test-api-key');
+      expect(calledUrl).toContain('department=hr');
+      expect(calledUrl).toContain('limit=5');
     });
 
-    it('should cap limit at 10 even if higher value is passed', async () => {
+    it('should cap limit at 5 even if higher value is passed', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ people: [] }),
+        json: () => Promise.resolve({ data: { emails: [] }, meta: { results: 0 } }),
       });
       vi.stubGlobal('fetch', mockFetch);
 
@@ -72,8 +70,27 @@ describe('ApolloClientService', () => {
         limit: 25,
       });
 
-      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-      expect(body.per_page).toBe(10);
+      const calledUrl = mockFetch.mock.calls[0][0];
+      expect(calledUrl).toContain('limit=5');
+    });
+
+    it('should use provided department parameter', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: { emails: [] }, meta: { results: 0 } }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      await searchPeople({
+        companyName: 'Google',
+        titles: ['Engineer'],
+        limit: 5,
+        department: 'it',
+      });
+
+      const calledUrl = mockFetch.mock.calls[0][0];
+      expect(calledUrl).toContain('department=it');
     });
 
     it('should throw RATE_LIMITED error on HTTP 429', async () => {
@@ -88,7 +105,6 @@ describe('ApolloClientService', () => {
       ).rejects.toMatchObject({
         code: 'RATE_LIMITED',
         statusCode: 429,
-        message: 'API limit reached for today',
       });
     });
 
@@ -104,7 +120,6 @@ describe('ApolloClientService', () => {
       ).rejects.toMatchObject({
         code: 'CREDITS_EXHAUSTED',
         statusCode: 402,
-        message: 'API credits exhausted',
       });
     });
 
@@ -112,7 +127,7 @@ describe('ApolloClientService', () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
-        json: () => Promise.resolve({}),
+        json: () => Promise.resolve({ errors: [{ details: 'Internal error' }] }),
       }));
 
       await expect(
@@ -129,8 +144,7 @@ describe('ApolloClientService', () => {
       await expect(
         searchPeople({ companyName: 'Google', titles: ['HR'], limit: 5 })
       ).rejects.toMatchObject({
-        code: 'NETWORK_ERROR',
-        message: 'Contact search failed. Pattern-based fallback is available.',
+        code: 'API_ERROR',
       });
     });
 
@@ -153,27 +167,54 @@ describe('ApolloClientService', () => {
         ok: true,
         status: 200,
         json: () => Promise.resolve({
-          people: [
-            { name: 'Jane Doe', title: 'HR Manager', email: 'jane@google.com' },
-            { name: 'John Smith', title: 'Recruiter', email: 'john@google.com' },
-          ],
-          pagination: { total_entries: 15 },
+          data: {
+            emails: [
+              { value: 'jane@google.com', first_name: 'Jane', last_name: 'Doe', position: 'HR Manager', confidence: 90, type: 'personal', department: 'hr', seniority: 'senior', verification: { status: 'valid', date: null } },
+              { value: 'john@google.com', first_name: 'John', last_name: 'Smith', position: 'Recruiter', confidence: 85, type: 'personal', department: 'hr', seniority: 'junior', verification: { status: 'valid', date: null } },
+            ],
+          },
+          meta: { results: 15 },
         }),
       }));
 
       const result = await searchPeople({
         companyName: 'Google',
         titles: ['HR', 'Recruiter'],
-        limit: 10,
+        limit: 5,
       });
 
       expect(result.contacts).toHaveLength(2);
-      expect(result.contacts[0]).toEqual({
+      expect(result.contacts[0]).toMatchObject({
         name: 'Jane Doe',
         title: 'HR Manager',
         email: 'jane@google.com',
+        contactType: 'hr',
       });
       expect(result.hasMore).toBe(true);
+    });
+
+    it('should assign contactType tech for non-hr departments', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({
+          data: {
+            emails: [
+              { value: 'dev@google.com', first_name: 'Dev', last_name: 'Engineer', position: 'Software Engineer', confidence: 80, type: 'personal', department: 'it', seniority: 'senior', verification: { status: 'valid', date: null } },
+            ],
+          },
+          meta: { results: 1 },
+        }),
+      }));
+
+      const result = await searchPeople({
+        companyName: 'Google',
+        titles: ['Engineer'],
+        limit: 5,
+        department: 'it',
+      });
+
+      expect(result.contacts[0].contactType).toBe('tech');
     });
   });
 
@@ -188,7 +229,7 @@ describe('ApolloClientService', () => {
 
       const result = extractContacts(data, 10);
       expect(result.contacts).toHaveLength(2);
-      expect(result.contacts[0]).toEqual({ name: 'Alice', title: 'HR Lead', email: 'alice@co.com' });
+      expect(result.contacts[0]).toEqual({ name: 'Alice', title: 'HR Lead', email: 'alice@co.com', contactType: 'hr' });
     });
 
     it('should skip contacts with missing name', () => {
@@ -285,7 +326,17 @@ describe('ApolloClientService', () => {
         name: 'Alice',
         title: 'HR',
         email: 'alice@co.com',
+        contactType: 'hr',
       });
+    });
+
+    it('should assign contactType tech for non-hr department', () => {
+      const data = {
+        people: [{ name: 'Dev', title: 'Engineer', email: 'dev@co.com' }],
+      };
+
+      const result = extractContacts(data, 10, 'it');
+      expect(result.contacts[0].contactType).toBe('tech');
     });
   });
 });

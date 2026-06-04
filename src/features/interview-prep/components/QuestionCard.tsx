@@ -10,15 +10,15 @@ interface QuestionCardProps {
 
 const categoryStyles: Record<InterviewQuestion["category"], { badge: string; label: string }> = {
   technical: {
-    badge: "bg-blue-900/40 text-blue-600 border border-blue-200",
+    badge: "bg-blue-50 text-blue-700 border border-blue-200",
     label: "Technical",
   },
   behavioral: {
-    badge: "bg-purple-900/40 text-purple-400 border border-purple-700",
+    badge: "bg-purple-50 text-purple-700 border border-purple-200",
     label: "Behavioral",
   },
   "role-specific": {
-    badge: "bg-orange-900/40 text-orange-400 border border-orange-700",
+    badge: "bg-orange-50 text-orange-700 border border-orange-200",
     label: "Role-Specific",
   },
 };

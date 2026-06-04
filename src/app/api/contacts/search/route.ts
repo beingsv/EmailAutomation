@@ -2,14 +2,17 @@
  * Contact Search API Route
  * POST /api/contacts/search
  *
- * Searches for HR/recruiting contacts at a target company using
+ * Searches for HR and tech contacts at a target company using
  * Hunter.io API with cache-first strategy and pattern-based fallback.
+ * Each contact in the response includes `contactType` ('hr' | 'tech') and
+ * `department` (the Hunter.io department value used for discovery).
  *
  * Request body: ContactSearchRequest { companyName?, jobDescription?, domain?, refresh? }
  * Success response: ContactSearchResponse { contacts, companyName, domain, source, extractedCompanyName? }
+ *   - Each contact includes: id, name, title, email, source, contactType, department, cachedAt, etc.
  * Error responses: 401 (unauthorized), 402 (credits exhausted), 429 (rate limit), 500 (config/internal), 502 (API error), 504 (timeout)
  *
- * Validates: Requirements 1.1, 1.2, 1.3, 1.4, 2.1, 2.5, 3.2, 3.5
+ * Validates: Requirements 1.1, 1.2, 1.3, 1.4, 2.1, 2.3, 2.5, 3.2, 3.5
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -58,12 +61,13 @@ export async function POST(request: NextRequest) {
     // Call the appropriate service method based on refresh flag
     let result;
     if (refresh && companyName) {
-      result = await refreshContacts(companyName);
+      result = await refreshContacts(companyName, jobDescription);
     } else {
       result = await findContacts({ companyName, jobDescription, domain, location });
     }
 
-    // Build response
+    // Build response — contacts include contactType and department fields
+    // (Requirement 2.3: contactType and department are included in returned contact data)
     const response: ContactSearchResponse = {
       contacts: result.contacts,
       companyName: result.companyName,

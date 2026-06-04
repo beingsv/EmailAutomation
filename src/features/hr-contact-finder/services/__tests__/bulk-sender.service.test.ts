@@ -27,7 +27,7 @@ describe('BulkSenderService', () => {
       };
 
       const generator = sendToMultiple(params);
-      const events: Array<{ value: unknown; done: boolean }> = [];
+      const events: Array<{ value: unknown; done: boolean | undefined }> = [];
 
       let result = await generator.next();
       while (!result.done) {

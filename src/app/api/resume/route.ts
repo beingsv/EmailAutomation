@@ -81,7 +81,11 @@ export async function POST(request: NextRequest) {
         EXTRACTION_FAILED: 'Could not extract text from PDF. Please try re-uploading.',
         LOW_TEXT_CONTENT:
           'This appears to be a scanned or image-based PDF. Please upload a text-based PDF.',
+        USER_NOT_FOUND:
+          'Your session has expired. Please log out and log back in.',
       };
+
+      const statusCode = result.error === 'USER_NOT_FOUND' ? 401 : 400;
 
       return NextResponse.json(
         {
@@ -89,7 +93,7 @@ export async function POST(request: NextRequest) {
           code: result.error,
           characterCount: result.characterCount,
         },
-        { status: 400 }
+        { status: statusCode }
       );
     }
 

@@ -36,3 +36,16 @@ export interface ConfigResult {
   success: boolean;
   error?: string;
 }
+
+export interface ReferralEmailParams {
+  userId: string;
+  jobDescription: string;
+}
+
+export interface GeneratedReferralEmail {
+  subject: string;
+  greeting: string;
+  body: string;
+  closing: string;
+  fullContent: string;
+}

@@ -64,6 +64,12 @@ export async function uploadResume(
     };
   }
 
+  // Verify user exists before writing (stale session tokens can reference deleted users)
+  const userExists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!userExists) {
+    return { success: false, error: 'USER_NOT_FOUND' };
+  }
+
   // Delete existing resume if present (re-upload replaces previous)
   await deleteResume(userId);
 

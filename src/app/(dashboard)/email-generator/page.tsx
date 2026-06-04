@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { EmailGeneratorForm } from "@/features/email/components/EmailGeneratorForm";
-import { EmailPreview } from "@/features/email/components/EmailPreview";
+import { DualEmailPreview } from "@/features/email/components/DualEmailPreview";
 import { useEmailGenerator } from "@/features/email/hooks/useEmailGenerator";
 import { ContactSearchBar } from "@/features/hr-contact-finder/components/ContactSearchBar";
 import { ContactList } from "@/features/hr-contact-finder/components/ContactList";
@@ -14,11 +14,14 @@ import { ToastContainer, useToast } from "@/shared/components/Toast";
 export default function EmailGeneratorPage() {
   const {
     generatedEmail,
+    referralEmail,
     isGenerating,
+    isGeneratingReferral,
     isSending,
     sendSuccess,
     sendError,
     error,
+    referralError,
     hasResume,
     isCheckingResume,
     hrEmail,
@@ -26,6 +29,7 @@ export default function EmailGeneratorPage() {
     sendEmail,
     setHrEmail,
     updateField,
+    updateReferralField,
     retry,
     clearError,
   } = useEmailGenerator();
@@ -43,13 +47,17 @@ export default function EmailGeneratorPage() {
     refreshContacts,
     toggleContact,
     toggleAll,
+    toggleAllHr,
+    toggleAllTech,
     sendToSelected,
+    sendToSelectedSmart,
     setCompanyName,
     clearResults,
   } = useContactFinder();
 
   const [lastJobDescription, setLastJobDescription] = useState("");
   const [manualEmail, setManualEmail] = useState("");
+  const [manualTemplate, setManualTemplate] = useState<'hr' | 'referral'>('hr');
   const [location, setLocation] = useState("");
   const { toasts, addToast, dismissToast } = useToast();
 
@@ -66,11 +74,11 @@ export default function EmailGeneratorPage() {
     }
   }, [sendError]);
 
-  // Generate email and auto-fetch HR contacts from the JD
+  // Generate email and auto-fetch contacts from the JD
   const handleGenerate = async (jobDescription: string, email: string) => {
     setLastJobDescription(jobDescription);
     await generate(jobDescription, email);
-    // After generation, try to auto-search for HR contacts
+    // After generation, try to auto-search for contacts (both HR and tech)
     await searchContacts({
       companyName: companyName.trim() || undefined,
       jobDescription,
@@ -80,7 +88,7 @@ export default function EmailGeneratorPage() {
       // Check after a tick — companyName state may have been updated by searchContacts
       setTimeout(() => {
         if (!companyName.trim()) {
-          addToast("info", "Couldn't detect company name from the JD. Enter it manually to find HR contacts.");
+          addToast("info", "Couldn't detect company name from the JD. Enter it manually to find contacts.");
         }
       }, 500);
     }
@@ -95,18 +103,72 @@ export default function EmailGeneratorPage() {
     });
   };
 
-  // Handle bulk send with the generated email subject and body
+  // Handle bulk send with smart routing — routes correct email template per contact type
   const handleSendToSelected = () => {
     if (!generatedEmail) return;
-    const fullBody = `${generatedEmail.greeting}\n\n${generatedEmail.body}\n\n${generatedEmail.closing}`;
-    sendToSelected(generatedEmail.subject, fullBody);
+
+    const hrFullBody = `${generatedEmail.greeting}\n\n${generatedEmail.body}\n\n${generatedEmail.closing}`;
+
+    // If we have a referral email, use smart routing
+    if (referralEmail) {
+      const referralFullBody = `${referralEmail.greeting}\n\n${referralEmail.body}\n\n${referralEmail.closing}`;
+      sendToSelectedSmart({
+        hrEmail: {
+          subject: generatedEmail.subject,
+          body: hrFullBody,
+        },
+        referralEmail: {
+          subject: referralEmail.subject,
+          body: referralFullBody,
+        },
+      });
+    } else {
+      // Fallback to legacy send if no referral email available
+      sendToSelected(generatedEmail.subject, hrFullBody);
+    }
+  };
+
+  // Handle toggle group all for ContactList
+  const handleToggleGroupAll = (contactType: 'hr' | 'tech') => {
+    if (contactType === 'hr') {
+      toggleAllHr();
+    } else {
+      toggleAllTech();
+    }
   };
 
   // Handle manual single send to a typed email
   const handleManualSend = () => {
-    if (!generatedEmail || !manualEmail) return;
-    setHrEmail(manualEmail);
-    sendEmail();
+    if (!manualEmail) return;
+
+    if (manualTemplate === 'referral' && referralEmail) {
+      // Send referral template
+      const fullBody = `${referralEmail.greeting}\n\n${referralEmail.body}\n\n${referralEmail.closing}`;
+      setHrEmail(manualEmail);
+      // Use the send API directly with referral content
+      fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: manualEmail,
+          subject: referralEmail.subject,
+          body: fullBody,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            addToast("success", `Referral email sent to ${data.recipientEmail}`);
+          } else {
+            addToast("error", data.error || "Failed to send referral email.");
+          }
+        })
+        .catch(() => addToast("error", "Network error. Please try again."));
+    } else if (generatedEmail) {
+      // Send HR template (original behavior)
+      setHrEmail(manualEmail);
+      sendEmail();
+    }
   };
 
   // Loading state while checking resume
@@ -173,12 +235,12 @@ export default function EmailGeneratorPage() {
           <EmailGeneratorForm onGenerate={handleGenerate} isGenerating={isGenerating} onHrEmailChange={setHrEmail} />
         </div>
 
-        {/* Right column: Email Preview */}
+        {/* Right column: Dual Email Preview */}
         <div className="rounded-2xl bg-white backdrop-blur-xl border border-gray-200 p-6 shadow-lg shadow-gray-200/60">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Email Preview</h2>
 
-          {/* Error state */}
-          {error && (
+          {/* Error state for overall generation error */}
+          {error && !isGenerating && !generatedEmail && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 mb-4">
               <div className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,27 +259,22 @@ export default function EmailGeneratorPage() {
             </div>
           )}
 
-          {/* Loading state */}
-          {isGenerating && (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4" />
-              <p className="text-sm text-gray-500">Generating your email...</p>
-              <p className="text-xs text-gray-400 mt-1">This may take a few seconds</p>
-            </div>
+          {/* Dual Email Preview with tabs */}
+          {(isGenerating || isGeneratingReferral || generatedEmail || referralEmail) && (
+            <DualEmailPreview
+              hrEmail={generatedEmail}
+              referralEmail={referralEmail}
+              isGeneratingHr={isGenerating}
+              isGeneratingReferral={isGeneratingReferral}
+              onUpdateHrField={updateField}
+              onUpdateReferralField={updateReferralField}
+              hrError={error && generatedEmail ? null : undefined}
+              referralError={referralError}
+            />
           )}
 
-          {/* Generated email preview */}
-          {!isGenerating && generatedEmail && (
-            <>
-              <EmailPreview
-                email={generatedEmail}
-                onUpdateField={updateField}
-              />
-            </>
-          )}
-
-          {/* Empty state */}
-          {!isGenerating && !generatedEmail && !error && (
+          {/* Empty state — only when nothing is happening */}
+          {!isGenerating && !isGeneratingReferral && !generatedEmail && !referralEmail && !error && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -229,18 +286,18 @@ export default function EmailGeneratorPage() {
         </div>
       </div>
 
-      {/* Step 2: Find HR Contacts & Send — only show after email is generated */}
+      {/* Step 2: Find Contacts & Send — only show after email is generated */}
       {generatedEmail && (
         <div className="rounded-2xl bg-white backdrop-blur-xl border border-gray-200 p-6 space-y-5 shadow-lg shadow-gray-200/60">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2.5">
             <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-blue-600 text-xs font-bold text-white shadow-sm shadow-purple-500/30">2</span>
-            Find HR Contacts &amp; Send
+            Find Contacts &amp; Send
           </h2>
           <p className="text-sm text-gray-500 -mt-3">
-            Search for HR contacts at the company, or enter an email manually to send directly.
+            Search for HR and tech contacts at the company, or enter an email manually to send directly.
           </p>
 
-          {/* Contact error — show as toast instead of inline for non-critical errors */}
+          {/* Contact error */}
           {contactError && contactError !== "Something went wrong" && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4">
               <div className="flex items-start gap-3">
@@ -267,20 +324,21 @@ export default function EmailGeneratorPage() {
             onLocationChange={setLocation}
           />
 
-          {/* Contact list */}
+          {/* Contact list with grouped display */}
           {contacts.length > 0 && (
             <ContactList
               contacts={contacts}
               selectedContacts={selectedContacts}
               onToggleContact={toggleContact}
               onToggleAll={toggleAll}
+              onToggleGroupAll={handleToggleGroupAll}
               onSendToSelected={handleSendToSelected}
               onRefresh={refreshContacts}
               isSending={isBulkSending}
             />
           )}
 
-          {/* Bulk send progress */}
+          {/* Bulk send progress with contact type */}
           <BulkSendProgress
             sendProgress={sendProgress}
             sendResults={sendResults}
@@ -297,6 +355,37 @@ export default function EmailGeneratorPage() {
             </div>
           </div>
 
+          {/* Template selector for manual send */}
+          {referralEmail && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Template:</span>
+              <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={() => setManualTemplate('hr')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    manualTemplate === 'hr'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  HR Application
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManualTemplate('referral')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    manualTemplate === 'referral'
+                      ? 'bg-green-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Referral Request
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Manual email input + send */}
           <div className="flex gap-3">
             <input
@@ -306,13 +395,13 @@ export default function EmailGeneratorPage() {
                 setManualEmail(e.target.value);
                 setHrEmail(e.target.value);
               }}
-              placeholder="Enter HR email manually (e.g. hr@company.com)"
+              placeholder={manualTemplate === 'referral' ? "Enter tech contact email (e.g. engineer@company.com)" : "Enter HR email manually (e.g. hr@company.com)"}
               className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             />
             <button
               type="button"
               onClick={handleManualSend}
-              disabled={!manualEmail || isSending}
+              disabled={!manualEmail || isSending || (manualTemplate === 'referral' ? !referralEmail : !generatedEmail)}
               className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isSending ? (

@@ -12,7 +12,7 @@ function getScoreColor(score: number): { stroke: string; text: string; bg: strin
     return { stroke: "stroke-red-500", text: "text-red-600", bg: "bg-red-50" };
   }
   if (score <= 70) {
-    return { stroke: "stroke-yellow-500", text: "text-yellow-700", bg: "bg-yellow-900/30" };
+    return { stroke: "stroke-yellow-500", text: "text-yellow-700", bg: "bg-yellow-50" };
   }
   return { stroke: "stroke-green-500", text: "text-emerald-600", bg: "bg-green-50" };
 }
@@ -47,7 +47,7 @@ export function ScoreDisplay({ overallScore, keywordScore, llmScore, aiUnavailab
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-gray-800"
+            className="text-gray-200"
           />
           {/* Progress circle */}
           <circle
@@ -89,8 +89,8 @@ export function ScoreDisplay({ overallScore, keywordScore, llmScore, aiUnavailab
 
       {/* AI unavailable notice */}
       {aiUnavailable && (
-        <div className="mt-4 w-full max-w-xs rounded-lg border border-yellow-700 bg-yellow-900/30 px-3 py-2">
-          <p className="text-xs text-yellow-700 flex items-center gap-1.5">
+        <div className="mt-4 w-full max-w-xs rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+          <p className="text-xs text-amber-700 flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>

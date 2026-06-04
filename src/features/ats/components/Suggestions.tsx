@@ -12,7 +12,7 @@ export function Suggestions({ skillsGaps, suggestions }: SuggestionsProps) {
       {skillsGaps.length > 0 && (
         <div>
           <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-            <svg className="w-4 h-4 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
             Skills Gaps ({skillsGaps.length})
@@ -21,9 +21,9 @@ export function Suggestions({ skillsGaps, suggestions }: SuggestionsProps) {
             {skillsGaps.map((gap, index) => (
               <li
                 key={index}
-                className="flex items-start gap-2 rounded-lg bg-yellow-50 border border-yellow-200/50 px-3 py-2 text-sm text-yellow-300"
+                className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800"
               >
-                <span className="text-yellow-500 mt-0.5 flex-shrink-0">•</span>
+                <span className="text-amber-500 mt-0.5 flex-shrink-0">•</span>
                 {gap}
               </li>
             ))}
@@ -44,9 +44,9 @@ export function Suggestions({ skillsGaps, suggestions }: SuggestionsProps) {
             {suggestions.map((suggestion, index) => (
               <li
                 key={index}
-                className="flex items-start gap-2 rounded-lg bg-gray-100 border border-gray-300 px-3 py-2 text-sm text-gray-200"
+                className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-gray-700"
               >
-                <span className="text-blue-600 font-medium mt-0.5 flex-shrink-0">{index + 1}.</span>
+                <span className="text-blue-600 font-semibold mt-0.5 flex-shrink-0">{index + 1}.</span>
                 {suggestion}
               </li>
             ))}

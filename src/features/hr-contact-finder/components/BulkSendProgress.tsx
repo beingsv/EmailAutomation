@@ -1,11 +1,20 @@
 "use client";
 
-import { BulkSendResult } from "../types";
+import { BulkSendResult, SmartBulkSendResult } from "../types";
 
 interface BulkSendProgressProps {
-  sendProgress: { current: number; total: number } | null;
-  sendResults: BulkSendResult | null;
+  sendProgress: {
+    current: number;
+    total: number;
+    recipientEmail?: string;
+    contactType?: 'hr' | 'tech';
+  } | null;
+  sendResults: BulkSendResult | SmartBulkSendResult | null;
   isSending: boolean;
+}
+
+function isSmartResult(result: BulkSendResult | SmartBulkSendResult): result is SmartBulkSendResult {
+  return 'totalHrSent' in result;
 }
 
 export function BulkSendProgress({
@@ -23,7 +32,12 @@ export function BulkSendProgress({
         <div className="flex items-center gap-3">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" />
           <p className="text-sm text-gray-600">
-            Sending {sendProgress.current} of {sendProgress.total}...
+            Sending {sendProgress.current} of {sendProgress.total}
+            {sendProgress.contactType && (
+              <span className="ml-1">
+                — {sendProgress.contactType === 'tech' ? 'Tech' : 'HR'} contact
+              </span>
+            )}
           </p>
         </div>
       )}
@@ -63,11 +77,35 @@ export function BulkSendProgress({
               </svg>
             )}
             <p className="text-sm font-medium text-gray-900">
-              {sendResults.totalFailed === 0
-                ? `All ${sendResults.totalSent} emails sent successfully`
-                : `${sendResults.totalSent} sent, ${sendResults.totalFailed} failed`}
+              {isSmartResult(sendResults)
+                ? sendResults.totalFailed === 0
+                  ? `All ${sendResults.totalHrSent + sendResults.totalReferralSent} emails sent successfully`
+                  : `Sending complete with ${sendResults.totalFailed} failure${sendResults.totalFailed > 1 ? 's' : ''}`
+                : sendResults.totalFailed === 0
+                  ? `All ${sendResults.totalSent} emails sent successfully`
+                  : `${sendResults.totalSent} sent, ${sendResults.totalFailed} failed`}
             </p>
           </div>
+
+          {/* Extended breakdown for smart send results */}
+          {isSmartResult(sendResults) && (
+            <div className="flex gap-4 text-xs text-gray-600 border-t border-gray-100 pt-2">
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-blue-400" />
+                HR sent: {sendResults.totalHrSent}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-400" />
+                Referral sent: {sendResults.totalReferralSent}
+              </span>
+              {sendResults.totalFailed > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full bg-red-400" />
+                  Failed: {sendResults.totalFailed}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Per-recipient status list */}
           <ul className="space-y-1">
@@ -79,18 +117,26 @@ export function BulkSendProgress({
                 <span className="text-xs text-gray-600 truncate mr-2">
                   {result.email}
                 </span>
-                {result.success ? (
-                  <span className="text-xs text-green-600 flex-shrink-0">
-                    Sent
-                  </span>
-                ) : (
-                  <span
-                    className="text-xs text-red-600 flex-shrink-0"
-                    title={result.error}
-                  >
-                    Failed
-                  </span>
-                )}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {'contactType' in result && result.contactType && (
+                    <span
+                      className={`text-xs px-1.5 py-0.5 rounded ${
+                        result.contactType === 'hr'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}
+                    >
+                      {result.contactType === 'hr' ? 'HR' : 'Tech'}
+                    </span>
+                  )}
+                  {result.success ? (
+                    <span className="text-xs text-green-600">Sent</span>
+                  ) : (
+                    <span className="text-xs text-red-600" title={result.error}>
+                      Failed
+                    </span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

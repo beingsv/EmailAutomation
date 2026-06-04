@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { GeneratedEmail } from "../types";
+import { GeneratedEmail, GeneratedReferralEmail } from "../types";
 
 interface UseEmailGeneratorReturn {
   generatedEmail: GeneratedEmail | null;
+  referralEmail: GeneratedReferralEmail | null;
   isGenerating: boolean;
+  isGeneratingReferral: boolean;
   isSending: boolean;
   sendSuccess: string | null;
   sendError: string | null;
   error: string | null;
+  referralError: string | null;
   hasResume: boolean | null;
   isCheckingResume: boolean;
   hrEmail: string;
@@ -17,6 +20,7 @@ interface UseEmailGeneratorReturn {
   sendEmail: () => Promise<void>;
   setHrEmail: (email: string) => void;
   updateField: (field: keyof GeneratedEmail, value: string) => void;
+  updateReferralField: (field: keyof GeneratedReferralEmail, value: string) => void;
   clearEmail: () => void;
   clearError: () => void;
   retry: () => void;
@@ -24,11 +28,14 @@ interface UseEmailGeneratorReturn {
 
 export function useEmailGenerator(): UseEmailGeneratorReturn {
   const [generatedEmail, setGeneratedEmail] = useState<GeneratedEmail | null>(null);
+  const [referralEmail, setReferralEmail] = useState<GeneratedReferralEmail | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingReferral, setIsGeneratingReferral] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [referralError, setReferralError] = useState<string | null>(null);
   const [hasResume, setHasResume] = useState<boolean | null>(null);
   const [isCheckingResume, setIsCheckingResume] = useState(true);
   const [lastParams, setLastParams] = useState<{ jobDescription: string; hrEmail: string } | null>(null);
@@ -57,7 +64,9 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
 
   const generate = useCallback(async (jobDescription: string, email: string) => {
     setIsGenerating(true);
+    setIsGeneratingReferral(true);
     setError(null);
+    setReferralError(null);
     setLastParams({ jobDescription, hrEmail: email });
     setHrEmailState(email);
 
@@ -65,7 +74,7 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
       const res = await fetch("/api/email/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobDescription, hrEmail: email }),
+        body: JSON.stringify({ jobDescription, hrEmail: email, generateReferral: true }),
       });
 
       const data = await res.json();
@@ -82,11 +91,21 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
         return;
       }
 
-      setGeneratedEmail(data);
+      // Handle dual email response
+      if (data.hrEmail) {
+        setGeneratedEmail(data.hrEmail);
+      }
+
+      if (data.referralEmail) {
+        setReferralEmail(data.referralEmail);
+      } else if (data.referralError) {
+        setReferralError(data.referralError);
+      }
     } catch {
       setError("Network error. Please check your connection and try again.");
     } finally {
       setIsGenerating(false);
+      setIsGeneratingReferral(false);
     }
   }, []);
 
@@ -100,13 +119,26 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
     });
   }, []);
 
+  const updateReferralField = useCallback((field: keyof GeneratedReferralEmail, value: string) => {
+    setReferralEmail((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, [field]: value };
+      // Rebuild fullContent when fields change
+      updated.fullContent = `${updated.subject}\n\n${updated.greeting}\n\n${updated.body}\n\n${updated.closing}`;
+      return updated;
+    });
+  }, []);
+
   const clearEmail = useCallback(() => {
     setGeneratedEmail(null);
+    setReferralEmail(null);
     setError(null);
+    setReferralError(null);
   }, []);
 
   const clearError = useCallback(() => {
     setError(null);
+    setReferralError(null);
   }, []);
 
   const retry = useCallback(() => {
@@ -160,11 +192,14 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
 
   return {
     generatedEmail,
+    referralEmail,
     isGenerating,
+    isGeneratingReferral,
     isSending,
     sendSuccess,
     sendError,
     error,
+    referralError,
     hasResume,
     isCheckingResume,
     hrEmail,
@@ -172,6 +207,7 @@ export function useEmailGenerator(): UseEmailGeneratorReturn {
     sendEmail,
     setHrEmail,
     updateField,
+    updateReferralField,
     clearEmail,
     clearError,
     retry,

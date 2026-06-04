@@ -11,12 +11,11 @@
  * Each result includes: email, first_name, last_name, position, department, confidence score.
  */
 
-import { da } from 'zod/locales';
 import type { ApolloSearchParams, ApolloSearchResult, ApolloContact } from '../types';
 
 const HUNTER_API_URL = 'https://api.hunter.io/v2/domain-search';
 const REQUEST_TIMEOUT_MS = 15_000;
-const MAX_RESULTS = 10;
+const MAX_RESULTS = 5;
 
 export class ApolloClientError extends Error {
   constructor(
@@ -50,6 +49,7 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
   }
 
   const limit = Math.min(params.limit, MAX_RESULTS);
+  const department = params.department || 'hr';
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -64,7 +64,7 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
       // POST request for location-based filtering
       const countryCode = getCountryCode(params.location);
       const postBody: Record<string, unknown> = {
-        department: 'hr',
+        department,
         type: 'personal',
         limit,
         location: {
@@ -78,7 +78,7 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
         postBody.company = params.companyName;
       }
 
-      console.log(`[Hunter] Searching (POST) for HR contacts: ${domain ? `domain=${domain}` : `company=${params.companyName}`} | Location: ${params.location}`);
+      console.log(`[Hunter] Searching (POST) for ${department} contacts: ${domain ? `domain=${domain}` : `company=${params.companyName}`} | Location: ${params.location}`);
 
       response = await fetch(`${HUNTER_API_URL}?api_key=${apiKey}`, {
         method: 'POST',
@@ -94,7 +94,7 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
       const url = new URL(HUNTER_API_URL);
       url.searchParams.set('api_key', apiKey);
       url.searchParams.set('limit', String(limit));
-      url.searchParams.set('department', 'hr');
+      url.searchParams.set('department', department);
       url.searchParams.set('type', 'personal');
 
       if (domain) {
@@ -103,7 +103,7 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
         url.searchParams.set('company', params.companyName);
       }
 
-      console.log(`[Hunter] Searching (GET) for HR contacts: ${domain ? `domain=${domain}` : `company=${params.companyName}`}`);
+      console.log(`[Hunter] Searching (GET) for ${department} contacts: ${domain ? `domain=${domain}` : `company=${params.companyName}`}`);
 
       response = await fetch(url.toString(), {
         method: 'GET',
@@ -167,10 +167,12 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
 
     console.log(`[Hunter] Found ${emails.length} emails (total available: ${totalResults})`);
 
-    // If no HR contacts found with department filter, try without it
+    const contactType: 'hr' | 'tech' = department === 'hr' ? 'hr' : 'tech';
+
+    // If no contacts found with department filter, try without it
     if (emails.length === 0 && domain) {
-      console.log(`[Hunter] No HR contacts found, trying broader search...`);
-      return await searchBroader(apiKey, domain, params.companyName, limit, controller.signal);
+      console.log(`[Hunter] No ${department} contacts found, trying broader search...`);
+      return await searchBroader(apiKey, domain, params.companyName, limit, controller.signal, contactType);
     }
 
     const contacts: ApolloContact[] = emails
@@ -192,11 +194,12 @@ export async function searchPeople(params: ApolloSearchParams): Promise<ApolloSe
       })
       .map((e: HunterEmail) => ({
         name: [e.first_name, e.last_name].filter(Boolean).join(' ') || 'Unknown',
-        title: e.position || e.department || 'HR',
+        title: e.position || e.department || (department === 'hr' ? 'HR' : 'Employee'),
         email: e.value,
         confidence: e.confidence,
         verified: e.verification?.status === 'valid',
         verificationStatus: (e.verification?.status as 'valid' | 'accept_all' | 'unknown' | 'invalid') || 'unknown',
+        contactType,
       }));
 
     console.log(`[Hunter] Extracted ${contacts.length} contacts with names and emails`);
@@ -235,7 +238,8 @@ async function searchBroader(
   domain: string,
   companyName: string,
   limit: number,
-  signal: AbortSignal
+  signal: AbortSignal,
+  contactType: 'hr' | 'tech'
 ): Promise<ApolloSearchResult> {
   const url = new URL(HUNTER_API_URL);
   url.searchParams.set('api_key', apiKey);
@@ -276,9 +280,10 @@ async function searchBroader(
       confidence: e.confidence,
       verified: e.verification?.status === 'valid',
       verificationStatus: (e.verification?.status as 'valid' | 'accept_all' | 'unknown' | 'invalid') || 'unknown',
+      contactType,
     }));
 
-  console.log(`[Hunter] Broader search found ${contacts.length} contacts`);
+  console.log(`[Hunter] Broader search found ${contacts.length} contacts (assigned as ${contactType})`);
 
   return {
     contacts,
@@ -449,13 +454,15 @@ interface HunterEmail {
  */
 export function extractContacts(
   data: Record<string, unknown>,
-  limit: number
+  limit: number,
+  department: string = 'hr'
 ): ApolloSearchResult {
   const people = Array.isArray(data.people) ? data.people : [];
   const totalAvailable = typeof data.pagination === 'object' && data.pagination !== null
     ? (data.pagination as Record<string, unknown>).total_entries
     : people.length;
 
+  const contactType: 'hr' | 'tech' = department === 'hr' ? 'hr' : 'tech';
   const contacts: ApolloContact[] = [];
 
   for (const person of people) {
@@ -466,7 +473,7 @@ export function extractContacts(
     const email = extractString(person, 'email');
 
     if (name && title && email) {
-      contacts.push({ name, title, email });
+      contacts.push({ name, title, email, contactType });
     }
   }
 

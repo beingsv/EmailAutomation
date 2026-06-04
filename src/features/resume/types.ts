@@ -1,7 +1,7 @@
 export interface ResumeResult {
   success: boolean;
   extractedText?: string;
-  error?: "INVALID_TYPE" | "SIZE_EXCEEDED" | "EXTRACTION_FAILED" | "LOW_TEXT_CONTENT";
+  error?: "INVALID_TYPE" | "SIZE_EXCEEDED" | "EXTRACTION_FAILED" | "LOW_TEXT_CONTENT" | "USER_NOT_FOUND";
   characterCount?: number;
 }
 

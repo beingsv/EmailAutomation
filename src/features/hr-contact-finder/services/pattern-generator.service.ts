@@ -28,6 +28,7 @@ export function generatePatterns(domain: string): Contact[] {
     title: getTitleForPrefix(prefix),
     email: `${prefix}@${domain}`,
     source: 'pattern' as const,
+    contactType: 'hr' as const,
     cachedAt: new Date(),
   }));
 }

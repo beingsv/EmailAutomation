@@ -14,6 +14,9 @@ vi.mock('@/shared/lib/db', () => ({
       create: vi.fn(),
       delete: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
@@ -29,6 +32,8 @@ const mockPrismaResume = prisma.resume as unknown as {
   create: ReturnType<typeof vi.fn>;
   delete: ReturnType<typeof vi.fn>;
 };
+
+const mockPrismaUser = (prisma as unknown as { user: { findUnique: ReturnType<typeof vi.fn> } }).user;
 
 const mockExtractText = extractTextFromPdf as ReturnType<typeof vi.fn>;
 
@@ -47,6 +52,7 @@ describe('Resume Service', () => {
     mockPrismaResume.findUnique.mockResolvedValue(null);
     mockPrismaResume.create.mockResolvedValue({});
     mockPrismaResume.delete.mockResolvedValue({});
+    mockPrismaUser.findUnique.mockResolvedValue({ id: userId });
   });
 
   afterEach(() => {

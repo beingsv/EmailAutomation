@@ -65,15 +65,18 @@ model Company {
 }
 
 model CompanyContact {
-  id        String   @id @default(cuid())
-  companyId String
-  name      String
-  title     String
-  email     String   @unique
-  source    String
-  cachedAt  DateTime @default(now())
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  title       String
+  email       String   @unique
+  source      String
+  contactType String   @default("hr")
+  department  String   @default("hr")
+  cachedAt    DateTime @default(now())
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
+  @@index([companyId, contactType])
 }

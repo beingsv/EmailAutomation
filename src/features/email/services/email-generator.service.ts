@@ -18,19 +18,26 @@ const JD_MIN_LENGTH = 50;
  * Extracts contact information (name, email, phone) from resume text.
  * Uses regex patterns to find common formats.
  */
-function extractContactInfo(resumeText: string): { name: string; email: string; phone: string } {
+function extractContactInfo(resumeText: string): { name: string; email: string; phone: string; linkedin: string; github: string } {
   // Extract email
   const emailMatch = resumeText.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
-  const email = emailMatch?.[0] || '[Your Email]';
+  const email = emailMatch?.[0] || '';
 
   // Extract phone (various formats: +91-XXXXX, (XXX) XXX-XXXX, XXX-XXX-XXXX, 10 digits)
   const phoneMatch = resumeText.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\+\d{1,3}[-.\s]\d{5}[-.\s]\d{5}/);
-  const phone = phoneMatch?.[0] || '[Your Phone]';
+  const phone = phoneMatch?.[0] || '';
+
+  // Extract LinkedIn URL
+  const linkedinMatch = resumeText.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[\w-]+\/?/i);
+  const linkedin = linkedinMatch?.[0] || '';
+
+  // Extract GitHub URL
+  const githubMatch = resumeText.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[\w-]+\/?/i);
+  const github = githubMatch?.[0] || '';
 
   // Extract name — typically the first line or first prominent text in a resume
-  // Look for a name-like pattern at the beginning (capitalized words, no special chars)
   const lines = resumeText.split('\n').filter(l => l.trim().length > 0);
-  let name = '[Your Name]';
+  let name = '';
 
   for (const line of lines.slice(0, 5)) {
     const trimmed = line.trim();
@@ -47,14 +54,14 @@ function extractContactInfo(resumeText: string): { name: string; email: string; 
   }
 
   // Fallback: if no name found from line matching, try the very first non-empty line
-  if (name === '[Your Name]' && lines.length > 0) {
+  if (!name && lines.length > 0) {
     const firstLine = lines[0].trim();
     if (firstLine.length <= 40 && !firstLine.match(/resume|curriculum|vitae|http|@|\d{3}/i)) {
       name = firstLine;
     }
   }
 
-  return { name, email, phone };
+  return { name, email, phone, linkedin, github };
 }
 
 /**
@@ -333,14 +340,32 @@ export async function generateEmail(params: EmailGenerationParams): Promise<Gene
 
     // Extract contact info from resume and inject into closing if placeholders exist
     const contactInfo = extractContactInfo(resumeText);
-    if (email.closing.includes('[Your Name]') || email.closing.includes('[Your Email]') || email.closing.includes('[Your Phone]')) {
-      email.closing = email.closing
-        .replace('[Your Name]', contactInfo.name)
-        .replace('[Your Email]', contactInfo.email)
-        .replace('[Your Phone]', contactInfo.phone);
-      // Rebuild fullContent
-      email.fullContent = `${email.greeting}\n\n${email.body}\n\n${email.closing}`;
+
+    // Build a proper closing with all contact info
+    const closingParts = ['Best regards,'];
+    if (contactInfo.name) closingParts.push(contactInfo.name);
+    if (contactInfo.phone) closingParts.push(contactInfo.phone);
+    if (contactInfo.email) closingParts.push(contactInfo.email);
+    if (contactInfo.linkedin) closingParts.push(contactInfo.linkedin);
+    if (contactInfo.github) closingParts.push(contactInfo.github);
+
+    // Replace the closing if it has placeholders or is just "Best regards,"
+    if (email.closing.includes('[Your Name]') || email.closing.includes('[Your Email]') || email.closing.includes('[Your Phone]') || email.closing.match(/^Best regards,?\s*$/i)) {
+      email.closing = closingParts.join('\n');
     }
+
+    // Remove duplicate closing from body (AI sometimes includes "Best regards" + name in body)
+    const closingPatterns = [
+      /\n\n?(Best regards|Kind regards|Regards|Sincerely|Warm regards)[,.]?\s*\n[\s\S]*$/i,
+    ];
+    for (const pattern of closingPatterns) {
+      if (pattern.test(email.body)) {
+        email.body = email.body.replace(pattern, '').trim();
+      }
+    }
+
+    // Rebuild fullContent
+    email.fullContent = `${email.greeting}\n\n${email.body}\n\n${email.closing}`;
 
     // Force-correct years of experience in case the AI ignored our value
     if (correctYears !== '[X]+') {
