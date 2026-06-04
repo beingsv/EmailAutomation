@@ -6,10 +6,23 @@
  * Validates: Requirements 5.1, 5.3, 5.4, 5.7
  */
 
-import { WordTokenizer, TfIdf } from 'natural';
 import type { KeywordAnalysis } from '../types';
 
-const tokenizer = new WordTokenizer();
+/**
+ * Simple word tokenizer — splits on non-alphanumeric boundaries.
+ * Handles compound terms like "node.js" while stripping trailing punctuation.
+ * Replaces 'natural' library's WordTokenizer to avoid ESM issues on Vercel.
+ */
+function tokenize(text: string): string[] {
+  const raw = text.toLowerCase().match(/[a-z0-9#+./]+/g) || [];
+  return raw.map(token => {
+    // Strip trailing dots (e.g., "react." → "react") but keep internal dots (e.g., "node.js")
+    while (token.endsWith('.') && !(/\.[a-z]+$/i.test(token))) {
+      token = token.slice(0, -1);
+    }
+    return token;
+  }).filter(t => t.length > 0);
+}
 
 /**
  * Common English stopwords and generic non-technical words to filter out.
@@ -251,7 +264,7 @@ export function extractKeywords(text: string): string[] {
   }
 
   // Then: tokenize and extract ONLY technical terms
-  const tokens = tokenizer.tokenize(text.toLowerCase()) || [];
+  const tokens = tokenize(text);
 
   for (const token of tokens) {
     if (token.length < 2) continue;
@@ -269,36 +282,48 @@ export function extractKeywords(text: string): string[] {
 /**
  * Calculates TF-IDF cosine similarity between resume text and job description.
  * Returns a value between 0 and 1.
+ * Uses a lightweight custom TF-IDF implementation (no external dependencies).
  *
  * Requirement 5.1: TF-IDF similarity analysis.
  */
 export function calculateTfIdfSimilarity(resumeText: string, jobDescription: string): number {
   if (!resumeText || !jobDescription) return 0;
 
-  const tfidf = new TfIdf();
+  const resumeTokens = tokenize(resumeText);
+  const jdTokens = tokenize(jobDescription);
 
-  // Add both documents
-  tfidf.addDocument(resumeText.toLowerCase());
-  tfidf.addDocument(jobDescription.toLowerCase());
+  if (resumeTokens.length === 0 || jdTokens.length === 0) return 0;
 
-  // Get all terms from both documents
-  const resumeTerms = tfidf.listTerms(0);
-  const jdTerms = tfidf.listTerms(1);
+  // Calculate term frequency for each document
+  const resumeTf = termFrequency(resumeTokens);
+  const jdTf = termFrequency(jdTokens);
 
-  // Build a combined vocabulary
+  // Build combined vocabulary
   const allTerms = new Set<string>();
-  for (const term of resumeTerms) allTerms.add(term.term);
-  for (const term of jdTerms) allTerms.add(term.term);
+  for (const term of resumeTf.keys()) allTerms.add(term);
+  for (const term of jdTf.keys()) allTerms.add(term);
 
   if (allTerms.size === 0) return 0;
 
-  // Build TF-IDF vectors for both documents
+  // Calculate IDF (with 2 documents)
+  const numDocs = 2;
+  const idf = new Map<string, number>();
+  for (const term of allTerms) {
+    let docCount = 0;
+    if (resumeTf.has(term)) docCount++;
+    if (jdTf.has(term)) docCount++;
+    // IDF = log(numDocs / docCount) + 1 (smoothed)
+    idf.set(term, Math.log(numDocs / docCount) + 1);
+  }
+
+  // Build TF-IDF vectors
   const resumeVector: number[] = [];
   const jdVector: number[] = [];
 
   for (const term of allTerms) {
-    resumeVector.push(tfidf.tfidf(term, 0));
-    jdVector.push(tfidf.tfidf(term, 1));
+    const termIdf = idf.get(term) || 0;
+    resumeVector.push((resumeTf.get(term) || 0) * termIdf);
+    jdVector.push((jdTf.get(term) || 0) * termIdf);
   }
 
   // Calculate cosine similarity
@@ -306,6 +331,21 @@ export function calculateTfIdfSimilarity(resumeText: string, jobDescription: str
 
   // Clamp to [0, 1]
   return Math.max(0, Math.min(1, similarity));
+}
+
+/**
+ * Calculates term frequency (normalized by document length).
+ */
+function termFrequency(tokens: string[]): Map<string, number> {
+  const tf = new Map<string, number>();
+  for (const token of tokens) {
+    tf.set(token, (tf.get(token) || 0) + 1);
+  }
+  // Normalize by document length
+  for (const [term, count] of tf) {
+    tf.set(term, count / tokens.length);
+  }
+  return tf;
 }
 
 /**
