@@ -166,7 +166,7 @@ export function parseReferralResponse(content: string): GeneratedReferralEmail {
   closing = closing.replace(/^CLOSING:\s*/i, '').trim();
 
   // Strip any SIGNATURE: artifact the AI may add to closing
-  closing = closing.replace(/\n*SIGNATURE:.*$/is, '').trim();
+  closing = closing.replace(/\n*SIGNATURE:[\s\S]*$/i, '').trim();
 
   // Fallback for completely unparseable content
   if (!subject || !greeting || !body || !closing) {
